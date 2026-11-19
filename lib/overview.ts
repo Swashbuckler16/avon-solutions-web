@@ -71,7 +71,7 @@ export function overview(
   const where = `o.created_date BETWEEN ? AND ? AND (o.reference LIKE ? ESCAPE '\\' OR o.customer LIKE ? ESCAPE '\\' OR o.destination LIKE ? ESCAPE '\\')`;
   const activity = prepare(
     `SELECT o.reference,o.customer,o.destination,o.created_date,o.amount_paise,o.payment_mode,COALESCE(s.status,o.status) status
-    FROM orders o LEFT JOIN shipments s ON s.order_id=o.id WHERE ${where} ORDER BY o.created_date DESC,o.reference DESC LIMIT 8`,
+    FROM orders o LEFT JOIN shipments s ON s.id=(SELECT id FROM shipments WHERE order_id=o.id AND direction='forward' AND status<>'cancelled' ORDER BY created_at DESC,id DESC LIMIT 1) WHERE ${where} ORDER BY o.created_date DESC,o.reference DESC LIMIT 8`,
   ).all(
     customerId,
     customerId,

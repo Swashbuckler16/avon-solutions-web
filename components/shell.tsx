@@ -29,6 +29,7 @@ const navigation = [
   { href: "/warehouses", label: "Pickup locations", icon: Truck },
   { href: "/shipments", label: "Shipments", icon: Truck },
   { href: "/returns", label: "Returns", icon: RotateCcw },
+  { href: "/pod", label: "Delivery proofs", icon: ShieldAlert },
   { href: "/exceptions", label: "Exceptions", icon: ShieldAlert },
   { href: "/analytics", label: "Analytics & reports", icon: BarChart3 },
 ];
@@ -144,7 +145,7 @@ export function Shell({
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
-            <span className="phase-label">OPERATIONS · STAGE 2</span>
+            <span className="phase-label">SHIPPING · STAGE 3</span>
             <strong>Built for what’s next.</strong>
             <p>
               A simpler workspace.

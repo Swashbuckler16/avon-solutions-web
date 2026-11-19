@@ -113,7 +113,7 @@ export default async function Settings({
             </div>
             <div>
               <dt>Current release</dt>
-              <dd>Stage 2 · Orders & customers</dd>
+              <dd>Stage 3 · Local shipping simulator</dd>
             </div>
           </dl>
           <div className="notice">

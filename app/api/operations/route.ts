@@ -14,6 +14,16 @@ import {
   transaction,
 } from "@/lib/orders";
 import { importOrders } from "@/lib/imports";
+import {
+  quoteShipment,
+  bookShipment,
+  reconcileBooking,
+  cancelShipment,
+  replayTracking,
+  reviewReturn,
+  uploadProof,
+  reviewProof,
+} from "@/lib/shipping";
 
 export async function POST(request: Request) {
   const user = await currentUser();
@@ -49,6 +59,30 @@ export async function POST(request: Request) {
       db = getDb();
     let result: unknown;
     switch (body.action) {
+      case "shipping_quote":
+        result = quoteShipment(db, user, data);
+        break;
+      case "shipping_book":
+        result = bookShipment(db, user, data);
+        break;
+      case "shipping_reconcile":
+        result = reconcileBooking(db, user, data);
+        break;
+      case "shipping_cancel":
+        result = cancelShipment(db, user, data);
+        break;
+      case "tracking_replay":
+        result = replayTracking(db, user, data);
+        break;
+      case "return_qa":
+        result = reviewReturn(db, user, data);
+        break;
+      case "pod_upload":
+        result = await uploadProof(db, user, data);
+        break;
+      case "pod_review":
+        result = reviewProof(db, user, data);
+        break;
       case "customer":
         result = { id: saveCustomer(db, user, data) };
         break;

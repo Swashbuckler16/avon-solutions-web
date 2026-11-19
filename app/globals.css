@@ -2350,3 +2350,195 @@ input[type="checkbox"] {
     flex-wrap: wrap;
   }
 }
+/* Stage 3 shipping worklists, service selection and printable test documents. */
+.status-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+}
+.status-tabs a {
+  white-space: nowrap;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+.status-tabs a[aria-current="page"] {
+  background: var(--mint);
+  color: var(--teal);
+  font-weight: 700;
+}
+.shipping-addresses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 24px 0;
+}
+.shipping-addresses address {
+  font-style: normal;
+  line-height: 1.8;
+}
+.service-options {
+  border: 0;
+  padding: 0;
+  margin: 24px 0;
+  min-width: 0;
+}
+.service-options legend {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.service-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin: 10px 0;
+  cursor: pointer;
+}
+.service-option.selected {
+  border-color: var(--teal);
+  background: var(--mint);
+}
+.service-option input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--teal);
+}
+.service-option span {
+  flex: 1;
+}
+.service-option small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.booking-candidates {
+  list-style: none;
+  padding: 0 !important;
+}
+.booking-candidates li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.booking-candidates span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.proof-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+  margin: 18px 0;
+}
+.review-form {
+  padding-top: 16px;
+}
+.print-sheet {
+  max-width: 900px;
+  margin: 24px auto;
+  padding: 36px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.print-sheet header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24px 0;
+}
+.print-brand {
+  font-size: 32px;
+  color: var(--teal);
+}
+.print-sheet h1 {
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+.print-sheet h2 {
+  font-size: 17px;
+}
+.print-sheet footer {
+  margin-top: 35px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.print-warning {
+  padding: 14px;
+  border: 2px solid #a36519;
+  background: #fff7e9;
+  color: #714611;
+  font-size: 13px;
+  font-weight: 700;
+}
+@media (max-width: 620px) {
+  .shipping-addresses {
+    grid-template-columns: 1fr;
+  }
+  .service-option {
+    padding: 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .booking-candidates li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .print-sheet {
+    padding: 18px;
+  }
+  .print-sheet table {
+    font-size: 10px;
+  }
+  .print-sheet th,
+  .print-sheet td {
+    padding: 8px;
+  }
+}
+@media print {
+  .sidebar,
+  .topbar,
+  .app-footer,
+  .no-print,
+  .skip-link {
+    display: none !important;
+  }
+  .app-shell,
+  .app-body {
+    display: block !important;
+  }
+  body,
+  .app-body main {
+    background: white;
+    padding: 0 !important;
+  }
+  .print-sheet {
+    border: 0;
+    margin: 0;
+    padding: 12mm;
+    max-width: none;
+  }
+  .print-sheet table {
+    break-inside: avoid;
+  }
+  .print-warning {
+    color: black;
+    background: white;
+  }
+  a {
+    color: inherit;
+  }
+}

@@ -30,7 +30,7 @@ export default async function Detail({
     editable = can(user.role, "operate"),
     unbooked =
       ["new", "unprocessed"].includes(order.status) &&
-      !db.prepare("SELECT id FROM shipments WHERE order_id=?").get(id);
+      !db.prepare("SELECT id FROM shipments WHERE order_id=? AND status<>'cancelled'").get(id);
   return (
     <>
       <PageHeading
@@ -55,6 +55,8 @@ export default async function Detail({
           </Link>
         )}
       </PageHeading>
+      {editable&&unbooked&&order.status==='new'&&<p className="notice"><Link className="button" href={'/shipments/new?order='+id}>Create shipment</Link> Compare simulated services and prepare a booking.</p>}
+      <p><Link href={'/shipments?q='+encodeURIComponent(order.reference)}>View this order’s shipments →</Link></p>
       <div className="order-detail-grid">
         <section className="card op-panel">
           <Badge status={order.status} />
@@ -76,7 +78,7 @@ export default async function Detail({
             <div>
               <dt>Carrier preference</dt>
               <dd>
-                {d.carrier || "Not supplied"} · not booked by this application
+                {d.carrier || "Not supplied"} · preference only; see shipment records for bookings
               </dd>
             </div>
             <div>

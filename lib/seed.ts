@@ -94,7 +94,7 @@ export async function seed(db: DatabaseSync) {
           date,
         );
         if (status === "shipped")
-          db.prepare("INSERT INTO shipments VALUES (?,?,?,?,?,1)").run(
+          db.prepare("INSERT INTO shipments(id,order_id,status,carrier,created_date,synthetic) VALUES (?,?,?,?,?,1)").run(
             `demo-${i + 1}`,
             id,
             states[i % 8],

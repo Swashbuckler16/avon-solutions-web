@@ -398,7 +398,7 @@ function editable(db: DatabaseSync, order: Order) {
   if (
     !["new", "unprocessed"].includes(order.status) ||
     db
-      .prepare("SELECT id FROM shipments WHERE order_id=? LIMIT 1")
+      .prepare("SELECT id FROM shipments WHERE order_id=? AND status<>'cancelled' LIMIT 1")
       .get(order.id)
   )
     throw new InputError(

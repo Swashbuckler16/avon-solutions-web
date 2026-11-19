@@ -23,7 +23,7 @@ export default async function Edit({
   if (
     !can(user.role, "operate") ||
     !["new", "unprocessed"].includes(order.status) ||
-    db.prepare("SELECT id FROM shipments WHERE order_id=?").get(id)
+    db.prepare("SELECT id FROM shipments WHERE order_id=? AND status<>'cancelled'").get(id)
   )
     return <p>This order cannot be edited.</p>;
   return (

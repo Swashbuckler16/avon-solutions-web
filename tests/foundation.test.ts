@@ -54,7 +54,7 @@ test("migrations and seeding are repeatable; records and profile survive reopeni
           n: number;
         }
       ).n,
-      3,
+      4,
     );
     assert.throws(() =>
       db.prepare("UPDATE users SET role='superuser' WHERE id='admin'").run(),

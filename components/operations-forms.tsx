@@ -685,8 +685,8 @@ export function OrderEditor({
             </select>
           </label>
           <p className="notice">
-            Preference only. Live serviceability, prices and carrier booking
-            arrive in Stage 3.
+            Preference only. Simulated services are available from Create shipment; live services
+            remain disconnected.
           </p>
           <Field
             label="Notes"

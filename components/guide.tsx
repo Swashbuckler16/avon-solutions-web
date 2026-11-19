@@ -52,8 +52,8 @@ export function WorkspaceGuide() {
           </li>
         </ul>
         <div className="notice">
-          Imports and order preparation work locally. Carrier booking and live
-          tracking arrive in Stage 3; no live shipments are created here.
+          Imports and order preparation work locally. Simulated booking and tracking work locally. No live
+          carrier is connected and no real shipments are created here.
         </div>
         <button className="button" onClick={() => dialog.current?.close()}>
           Got it <ArrowRight size={16} />
