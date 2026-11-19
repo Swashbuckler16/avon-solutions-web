@@ -14,19 +14,29 @@ export function openDatabase(path: string) {
   db.exec(
     "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)",
   );
-  if (
-    !db.prepare("SELECT version FROM schema_migrations WHERE version = 1").get()
-  ) {
+  for (const [index, file] of [
+    "001-foundation.sql",
+    "002-orders.sql",
+    "003-order-sequence.sql",
+  ].entries()) {
+    const version = index + 1;
+    if (
+      db
+        .prepare("SELECT version FROM schema_migrations WHERE version=?")
+        .get(version)
+    )
+      continue;
     db.exec("BEGIN IMMEDIATE");
     try {
       // Recheck under the write lock: development workers can start together.
       if (
         !db
-          .prepare("SELECT version FROM schema_migrations WHERE version = 1")
-          .get()
+          .prepare("SELECT version FROM schema_migrations WHERE version=?")
+          .get(version)
       ) {
-        db.exec(readFileSync(resolve("migrations/001-foundation.sql"), "utf8"));
-        db.prepare("INSERT INTO schema_migrations VALUES (1, ?)").run(
+        db.exec(readFileSync(resolve("migrations", file), "utf8"));
+        db.prepare("INSERT INTO schema_migrations VALUES (?, ?)").run(
+          version,
           Date.now(),
         );
       }

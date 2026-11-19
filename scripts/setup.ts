@@ -1,4 +1,11 @@
-import { mkdirSync, writeFileSync, appendFileSync, openSync, fchmodSync, closeSync } from "node:fs";
+import {
+  mkdirSync,
+  writeFileSync,
+  appendFileSync,
+  openSync,
+  fchmodSync,
+  closeSync,
+} from "node:fs";
 import { resolve } from "node:path";
 import { getDb } from "../lib/db.ts";
 import { seed } from "../lib/seed.ts";

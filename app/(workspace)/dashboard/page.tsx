@@ -16,6 +16,7 @@ import { getDb } from "@/lib/db";
 import { overview } from "@/lib/overview";
 import { PageHeading, Metric, Badge } from "@/components/ui";
 import { WorkspaceGuide } from "@/components/guide";
+import { requireUser } from "@/lib/auth";
 
 export default async function Dashboard({
   searchParams,
@@ -25,7 +26,8 @@ export default async function Dashboard({
   const params = await searchParams;
   const days = params.days === "30" ? 30 : 7;
   const q = typeof params.q === "string" ? params.q.slice(0, 100) : "";
-  const data = overview(getDb(), days, q);
+  const user = await requireUser();
+  const data = overview(getDb(), days, q, new Date(), user.customer_id || null);
   const max = Math.max(1, ...data.trend.map((d) => d.count));
   const rate = data.shipments
     ? Math.round((data.delivered / data.shipments) * 100)
@@ -45,12 +47,13 @@ export default async function Dashboard({
       <div className="sample-banner">
         <span>
           <FlaskConical size={17} />
-          <strong>Sample workspace</strong>
+          <strong>Local workspace</strong>
           <span className="banner-detail">
-            Explore with fictional data. No live carrier connections.
+            Customer orders and labeled sample records. No live carrier
+            connections.
           </span>
         </span>
-        <span className="sample-tag">STAGE 1</span>
+        <span className="sample-tag">STAGE 2</span>
       </div>
       <div className="section-toolbar">
         <div className="section-title">
@@ -98,7 +101,7 @@ export default async function Dashboard({
         <Metric
           label="Total shipments"
           value={data.shipments}
-          note="From sample orders"
+          note="From persisted orders"
           icon={<Truck size={20} />}
         />
         <Metric
@@ -238,7 +241,7 @@ export default async function Dashboard({
             <h2>
               Recent activity <span className="count-pill">{data.matches}</span>
             </h2>
-            <p className="muted">The latest sample orders in your workspace</p>
+            <p className="muted">The latest orders in your workspace</p>
           </div>
           <form className="search-form" action="/dashboard">
             <input type="hidden" name="days" value={days} />
@@ -324,7 +327,7 @@ export default async function Dashboard({
           <span>
             Showing {data.activity.length} of {data.matches} matching orders
           </span>
-          <span className="muted">Read-only sample activity</span>
+          <span className="muted">Open Orders to manage activity</span>
         </div>
       </section>
       <section className="bottom-grid">
@@ -334,7 +337,7 @@ export default async function Dashboard({
           </span>
           <div>
             <h3>Your workspace is taking shape.</h3>
-            <p>Three sample warehouses. One connected foundation.</p>
+            <p>Customer pickup locations. One connected workspace.</p>
           </div>
           <Link href="/settings" aria-label="Open workspace settings">
             <ArrowUpRight size={21} />
@@ -342,7 +345,7 @@ export default async function Dashboard({
         </div>
         <Link href="/orders" className="next-stage-card">
           <div>
-            <span className="eyebrow">COMING IN STAGE 2</span>
+            <span className="eyebrow">ORDER MANAGEMENT</span>
             <h3>From orders to opportunity.</h3>
             <p>Order management, imports and warehouses</p>
           </div>

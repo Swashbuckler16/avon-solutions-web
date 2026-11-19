@@ -1,6 +1,6 @@
 # Avon Operations
 
-A small-scale, local shipping workspace. Stage 1 provides authentication, server-enforced roles, persistent SQLite storage, a sample-data overview and editable profiles. Operational modules are clearly marked for later stages. No live carrier is connected.
+A small-scale, local shipping workspace. Stage 2 adds isolated customer logins, pickup locations, persistent order workflows, spreadsheet imports and CSV exports to the authenticated SQLite workspace. Shipping, returns and analytics remain later-stage modules. No live carrier is connected.
 
 ## Run locally
 
@@ -40,8 +40,18 @@ The HTTP check requires a production build and starts its own temporary database
 
 Ponytail is mandatory for implementation simplicity; CodeRabbit is mandatory for meaningful reviews and stage completion. Review results and limitations are recorded honestly. Review commands may require the normal Windows environment because the sandbox cannot see the saved CLI login.
 
-Stage 1 and its GitHub commit/push are authorized. Hosting and Stage 2 are not authorized. See `AGENTS.md`, `docs/five-stage-roadmap.md`, `docs/stage-1-specification.md` and `docs/stage-1-validation.md`.
+Stage 2 and its GitHub commit/push are authorized. Hosting and Stage 3 are not authorized. See `AGENTS.md`, `docs/five-stage-roadmap.md`, `docs/stage-1-specification.md` and `docs/stage-1-validation.md`.
 
 ## Assets
 
 Original CSS/layout and wordmark. Lucide icons (ISC) and DM Sans/Manrope fonts (SIL Open Font License) are installed locally; see the packages' licenses. No runtime font/CDN request and no copied reference-site proprietary assets.
+
+## Stage 2 workflow
+
+An Avon administrator creates a customer under Customers, selects that record and creates its login. The random password is shown once; share it privately. Customer accounts use the operator permission set with a server-enforced customer scope. Deactivating a customer invalidates its sessions and blocks new logins. There is no public signup or password-reset flow in this local release.
+
+Create a pickup location for the customer, then use Orders to create a dispatch with recipient, products, invoice reference and package details. Prices are final unit prices inclusive of any tax; the system stores an invoice reference rather than issuing a tax invoice. A preferred carrier is informational until Stage 3. Customers see only their own records; Avon staff can work across customers. Viewers cannot mutate records.
+
+Imports accept CSV, TSV and XLSX (first sheet), up to 1 MB and 500 orders per file. One row creates one order with one item/package; edit it afterwards to add more. Download the template, map columns, validate, then import valid rows. Failed rows can be corrected and retried; existing platform-wide references are skipped, never overwritten. Mappings are private to the signed-in account. Exports cover all matching orders, up to 10,000 rows, and escape spreadsheet formulas. Files and real customer data must never be committed.
+
+Split/merge operations are deliberately excluded until rules are agreed. Clone creates an independent order with a new reference; it does not split quantities, merge invoices or copy a booking. See docs/stage-2-validation.md for checks and limits.

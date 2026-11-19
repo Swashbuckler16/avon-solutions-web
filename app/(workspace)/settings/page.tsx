@@ -14,8 +14,14 @@ export default async function Settings({
   const params = await searchParams;
   const db = getDb();
   const warehouses = db
-    .prepare("SELECT name,city,code FROM warehouses ORDER BY name")
-    .all() as { name: string; city: string; code: string }[];
+    .prepare(
+      "SELECT name,city,code FROM warehouses WHERE customer_id=? OR ? IS NULL ORDER BY name",
+    )
+    .all(user.customer_id || null, user.customer_id || null) as {
+    name: string;
+    city: string;
+    code: string;
+  }[];
   const users = can(user.role, "manage_users")
     ? (db
         .prepare("SELECT name,email,role,id FROM users ORDER BY role")
@@ -64,7 +70,9 @@ export default async function Settings({
             <input id="profile-email" value={user.email} readOnly />
             <div className="profile-role">
               <span>Workspace role</span>
-              <span className="role-pill">{user.role}</span>
+              <span className="role-pill">
+                {user.customer_id ? "Customer" : user.role}
+              </span>
             </div>
             <p className="field-help">
               Role and email changes are managed by your administrator.
@@ -93,7 +101,7 @@ export default async function Settings({
             </div>
             <div>
               <dt>Data source</dt>
-              <dd>Synthetic sample records</dd>
+              <dd>Persistent local records</dd>
             </div>
             <div>
               <dt>Carrier connections</dt>
@@ -105,7 +113,7 @@ export default async function Settings({
             </div>
             <div>
               <dt>Current release</dt>
-              <dd>Stage 1 · Foundation</dd>
+              <dd>Stage 2 · Orders & customers</dd>
             </div>
           </dl>
           <div className="notice">
@@ -120,8 +128,10 @@ export default async function Settings({
       <section className="card">
         <div className="card-heading">
           <div>
-            <h2>Sample warehouses</h2>
-            <p className="muted">Warehouse editing arrives in Stage 2.</p>
+            <h2>Pickup locations</h2>
+            <p className="muted">
+              <Link href="/warehouses">Manage pickup locations →</Link>
+            </p>
           </div>
           <Warehouse size={22} />
         </div>

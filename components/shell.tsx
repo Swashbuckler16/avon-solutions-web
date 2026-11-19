@@ -25,6 +25,8 @@ import type { User } from "@/lib/auth-core";
 const navigation = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/orders", label: "Orders", icon: Package },
+  { href: "/customers", label: "Customers", icon: Package },
+  { href: "/warehouses", label: "Pickup locations", icon: Truck },
   { href: "/shipments", label: "Shipments", icon: Truck },
   { href: "/returns", label: "Returns", icon: RotateCcw },
   { href: "/exceptions", label: "Exceptions", icon: ShieldAlert },
@@ -77,7 +79,9 @@ export function Shell({
     };
   }, [mobileOpen]);
   const active =
-    navigation.find((n) => pathname === n.href)?.label || "Workspace settings";
+    navigation.find(
+      (n) => pathname === n.href || pathname.startsWith(n.href + "/"),
+    )?.label || "Workspace settings";
   return (
     <div
       className={`app-shell ${collapsed ? "is-collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}
@@ -140,7 +144,7 @@ export function Shell({
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
-            <span className="phase-label">FOUNDATION · STAGE 1</span>
+            <span className="phase-label">OPERATIONS · STAGE 2</span>
             <strong>Built for what’s next.</strong>
             <p>
               A simpler workspace.
@@ -214,7 +218,7 @@ export function Shell({
               </span>
               <span>
                 <strong>{user.name}</strong>
-                <small>{user.role}</small>
+                <small>{user.customer_id ? "Customer" : user.role}</small>
               </span>
             </Link>
             <form action="/api/logout" method="post">

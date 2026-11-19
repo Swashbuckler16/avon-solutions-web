@@ -15,7 +15,9 @@ export async function seed(db: DatabaseSync) {
     for (const { role, password, hash } of prepared) {
       const email = `${role}@avon.local`;
       if (!db.prepare("SELECT id FROM users WHERE email=?").get(email)) {
-        db.prepare("INSERT INTO users VALUES (?,?,?,?,?,?)").run(
+        db.prepare(
+          "INSERT INTO users(id,email,name,role,password_hash,created_at) VALUES (?,?,?,?,?,?)",
+        ).run(
           role,
           email,
           role === "admin"
@@ -31,7 +33,7 @@ export async function seed(db: DatabaseSync) {
       }
     }
     const insertWarehouse = db.prepare(
-      "INSERT OR IGNORE INTO warehouses VALUES (?,?,?,?)",
+      "INSERT OR IGNORE INTO warehouses(id,name,city,code) VALUES (?,?,?,?)",
     );
     insertWarehouse.run("mum", "Mumbai Central", "Mumbai", "MUM-01");
     insertWarehouse.run("blr", "Bengaluru South", "Bengaluru", "BLR-01");
@@ -78,7 +80,9 @@ export async function seed(db: DatabaseSync) {
         const id = `sample-${i + 1}`;
         const status =
           i % 9 === 0 ? "new" : i % 13 === 0 ? "unprocessed" : "shipped";
-        db.prepare("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?,1)").run(
+        db.prepare(
+          "INSERT INTO orders(id,reference,customer,destination,warehouse_id,status,payment_mode,amount_paise,created_date,synthetic) VALUES (?,?,?,?,?,?,?,?,?,1)",
+        ).run(
           id,
           `AV-${1048 - i}`,
           names[i % 6],

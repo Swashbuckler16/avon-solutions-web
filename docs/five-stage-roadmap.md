@@ -1,12 +1,12 @@
 # Five-stage local development roadmap
 
-Status: Stage 1 foundation implemented; validation and review status are recorded in stage-1-validation.md. Stage 2 has not started. No hosting, public deployment, domain setup or cloud publishing is included in any stage. This roadmap supersedes the phase sequence in build-plan.md.
+Status: Stage 1 foundation implemented; validation and review status are recorded in stage-1-validation.md. Stage 2 is complete and validated; see stage-2-validation.md. Stage 3 has not started. No hosting, public deployment, domain setup or cloud publishing is included in any stage. This roadmap supersedes the phase sequence in build-plan.md.
 
 ## Target
 
 By the end of Stage 5, deliver a locally runnable Avon shipping application with persistent data, authentication, operational workflows, reporting, and tested end-to-end behavior at small scale. Preserve useful reference layout patterns and improve clarity, bulk workflows, feedback, error recovery and accessibility.
 
-Small scale means one organization initially, a limited number of roles and carrier integrations, and a modest test dataset. It does not mean nonfunctional buttons or hardcoded dashboard results. Set a concrete dataset and performance budget in Stage 1.
+Small scale means one Avon organization with isolated customer accounts, staff roles, a limited number of carrier integrations, and a modest test dataset. It does not mean nonfunctional buttons or hardcoded dashboard results. Set a concrete dataset and performance budget in Stage 1.
 
 Carrier-generated bookings, real AWBs, rates, tracking and POD require authorized carrier services. Develop and test a clearly labeled simulator alongside integrations. Live or sandbox carrier parity is conditional on credentials and documented provider capabilities; a simulator is not evidence of a working live integration. External systems are not hosting for our application. Do not make real bookings without specific user authorization.
 

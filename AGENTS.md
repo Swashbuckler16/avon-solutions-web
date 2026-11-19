@@ -7,7 +7,7 @@
 - Use the installed Ponytail skill throughout implementation, architecture decisions, refactoring and fixes, even when not mentioned in subsequent prompts. Prefer simple maintainable solutions without sacrificing required features, validation, accessibility or security.
 - Use the installed CodeRabbit skill throughout development: review meaningful change batches and each stage's final changes, address relevant issues, and report actual review status. Do not substitute a manual review for CodeRabbit or claim a review passed if the service was unavailable. Surface authentication or service blockers explicitly.
 - Each stage needs working behavior, appropriate checks and a clear completion report. Distinguish actual external integrations from simulated carrier responses.
-- Current authorization: Stage 1 implementation, local setup and validation are authorized. The user has authorized committing and pushing Stage 1 to GitHub. Do not proceed to Stage 2 or host until separately authorized. The earlier planning-only restriction was superseded by the user's instruction to start Stage 1.
+- Current authorization: Stage 2 implementation, customer logins, local validation, commit and push are authorized. Customer records must be isolated from other customers; Avon staff can manage all customers. Do not start Stage 3 or host until separately authorized.
 - Keep credentials, customer records and session tokens out of source control.
 
 ## Planning references

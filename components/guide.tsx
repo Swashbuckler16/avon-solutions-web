@@ -33,8 +33,9 @@ export function WorkspaceGuide() {
         </div>
         <h2 id="guide-title">A clear view of your operations.</h2>
         <p className="muted">
-          Your local workspace is ready to explore. Everything you see here uses
-          fictional sample records.
+          Create customer orders, manage pickup locations and import
+          spreadsheets. Customer accounts can access only their own business
+          records.
         </p>
         <ul className="guide-list">
           <li>
@@ -51,8 +52,8 @@ export function WorkspaceGuide() {
           </li>
         </ul>
         <div className="notice">
-          Booking, imports and carrier connections arrive in the next stages. No
-          live shipments are created here.
+          Imports and order preparation work locally. Carrier booking and live
+          tracking arrive in Stage 3; no live shipments are created here.
         </div>
         <button className="button" onClick={() => dialog.current?.close()}>
           Got it <ArrowRight size={16} />
