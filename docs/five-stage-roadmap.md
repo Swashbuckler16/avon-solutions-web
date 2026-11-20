@@ -1,6 +1,6 @@
 # Five-stage local development roadmap
 
-Status: Stage 1 foundation implemented; validation and review status are recorded in stage-1-validation.md. Stage 2 is complete and validated; see stage-2-validation.md. Stage 3's local simulator scope is complete and validated; see stage-3-validation.md. The user explicitly excluded external carrier connections until Blue Dart documentation/access is available. Stage 4 has not started. No hosting, public deployment, domain setup or cloud publishing is included in any stage. This roadmap supersedes the phase sequence in build-plan.md.
+Status: Stage 1 foundation implemented; validation and review status are recorded in stage-1-validation.md. Stage 2 is complete and validated; see stage-2-validation.md. Stage 3's local simulator scope is complete and validated; see stage-3-validation.md. The user explicitly excluded external carrier connections until Blue Dart documentation/access is available. Stage 4 local operations are complete and validated; see stage-4-validation.md. Stage 5 is complete for the agreed local simulator scope; see stage-5-validation.md for test and review evidence, and local-release.md for startup, recovery and explicit limits. No hosting, public deployment, domain setup or cloud publishing is included in any stage. This roadmap supersedes the phase sequence in build-plan.md.
 
 ## Target
 

@@ -354,6 +354,43 @@ try {
       ).json();
       assert.equal(booked.state, "booked");
       const sid = booked.id;
+      const exceptionResponse = await op("exception_open", {
+        shipment_id: sid,
+        kind: "npr",
+        reason: "HTTP pickup exception",
+      });
+      assert.equal(exceptionResponse.status, 200);
+      const caseId = (await exceptionResponse.json()).id;
+      assert.equal(
+        (
+          await op(
+            "exception_action",
+            {
+              cases: [{ id: caseId, revision: 1 }],
+              action: "reattempt",
+              note: "Try again",
+            },
+            cb,
+          )
+        ).status,
+        200,
+      );
+      assert.equal(
+        (
+          await (
+            await op(
+              "exception_action",
+              {
+                cases: [{ id: caseId, revision: 1 }],
+                action: "reattempt",
+                note: "Try again",
+              },
+              ca,
+            )
+          ).json()
+        ).results[0].status,
+        "saved",
+      );
       assert.equal(
         (await (await op("shipping_reconcile", bookingRequest, ca)).json()).id,
         sid,
@@ -500,6 +537,131 @@ try {
         );
       console.log(
         "PASS shipping quote/booking recovery, private labels/POD, tracking deduplication, reverse delivery, QA and cross-customer access",
+      );
+      const ruleData = {
+        customer_id: a,
+        name: "HTTP Rule A",
+        priority: 10,
+        active: 1,
+        pin: "600",
+        payment: "any",
+        max_kg: 100,
+        carrier: "Blue Dart",
+      };
+      assert.equal((await op("rule_save", ruleData, ca)).status, 403);
+      assert.equal((await op("rule_save", ruleData)).status, 200);
+      const channelResponse = await op("channel_save", {
+        customer_id: a,
+        name: "HTTP Channel A",
+        active: 1,
+        callbacks: 1,
+      });
+      assert.equal(channelResponse.status, 200);
+      const channelId = (await channelResponse.json()).id;
+      const sync = {
+        channel_id: channelId,
+        events: [
+          {
+            event_key: "http-channel-1",
+            order: { ...data, reference: "HTTP-CHANNEL-ORDER" },
+          },
+        ],
+      };
+      assert.equal((await op("channel_sync", sync, cb)).status, 404);
+      const imported = await (await op("channel_sync", sync, ca)).json();
+      assert.equal(imported.results[0].status, "imported");
+      assert.equal(
+        (await (await op("channel_sync", sync, ca)).json()).results[0].status,
+        "duplicate",
+      );
+      assert.equal(
+        (
+          await op(
+            "rule_apply",
+            { order_id: imported.results[0].order_id, revision: 1 },
+            ca,
+          )
+        ).status,
+        200,
+      );
+      assert.equal(
+        (
+          await op(
+            "feedback_save",
+            { shipment_id: sid, score: 10, note: "HTTP good", revision: 0 },
+            ca,
+          )
+        ).status,
+        200,
+      );
+      assert.equal(
+        (
+          await op(
+            "feedback_save",
+            { shipment_id: sid, score: 1, revision: 0 },
+            cb,
+          )
+        ).status,
+        404,
+      );
+      const freight = {
+        shipment_id: sid,
+        quoted: "100",
+        invoiced: "110",
+        invoice_ref: "HTTP-COST",
+        revision: 0,
+      };
+      assert.equal((await op("freight_save", freight, ca)).status, 403);
+      assert.equal((await op("freight_save", freight)).status, 200);
+      const reportResponse = await op(
+        "report_save",
+        {
+          name: "HTTP private report",
+          filters: { mode: "simulator" },
+          interval_hours: 1,
+        },
+        ca,
+      );
+      assert.equal(reportResponse.status, 200);
+      const reportId = (await reportResponse.json()).id;
+      assert.equal((await op("report_run", { id: reportId }, cb)).status, 404);
+      const run = await (await op("report_run", { id: reportId }, ca)).json();
+      assert.equal(
+        (await customerGet("/api/reports?run=" + run.id, cb)).status,
+        404,
+      );
+      assert.match(
+        await (await customerGet("/api/reports?run=" + run.id, ca)).text(),
+        /HTTP-SHIPPING-ORDER/,
+      );
+      assert.equal((await request("/api/reports")).status, 401);
+      assert.ok(
+        !(await (await customerGet("/api/reports", cb)).text()).includes(
+          "HTTP-SHIPPING-ORDER",
+        ),
+      );
+      for (const route of [
+        "/exceptions",
+        "/automation",
+        "/integrations",
+        "/analytics",
+        "/insights",
+        "/insights?q=HTTP-SHIPPING&q=ignored",
+      ]) {
+        const own = await customerGet(route, ca);
+        assert.equal(own.status, 200);
+        const pageBody = await own.text();
+        assert.ok(!pageBody.includes("Application error") && !pageBody.includes("Something didn’t load"),route+" failed to render");
+        const other = await (await customerGet(route, cb)).text();
+        assert.ok(
+          !other.includes("HTTP-SHIPPING-ORDER") &&
+            !other.includes("HTTP Channel A") &&
+            !other.includes("HTTP Rule A"),
+          route + " leaked customer data",
+        );
+      }
+      console.log(
+        "PASS Stage 4 exception requests, rules, channel retries, private reports, freight, feedback and scoped pages",
       );
       assert.equal(
         (

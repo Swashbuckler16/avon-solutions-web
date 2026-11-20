@@ -13,7 +13,11 @@
     "db:setup": "node --experimental-strip-types scripts/setup.ts",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "test:http": "node --experimental-strip-types scripts/http-check.ts"
+    "test:http": "node --experimental-strip-types scripts/http-check.ts",
+    "scheduler": "node --experimental-strip-types scripts/scheduler.ts",
+    "db:backup": "node --experimental-strip-types scripts/backup.ts backup",
+    "db:restore": "node --experimental-strip-types scripts/backup.ts restore",
+    "test:performance": "node --experimental-strip-types scripts/performance.ts"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",

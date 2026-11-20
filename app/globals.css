@@ -2542,3 +2542,61 @@ input[type="checkbox"] {
     color: inherit;
   }
 }
+/* Local operational workspaces */
+.stage4-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+.stage4-metrics strong {
+  display: block;
+  font-size: 1.7rem;
+  margin-top: 12px;
+}
+.case-entry {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border, #e2e8e6);
+}
+.op-fields {
+  border: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  min-width: 0;
+}
+.op-panel {
+  margin-bottom: 20px;
+}
+.op-panel details {
+  margin: 14px 0;
+}
+.op-panel summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-weight: 600;
+}
+.op-panel textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #c5d4ce;
+  border-radius: 8px;
+  font: inherit;
+}
+.op-panel pre,
+.op-panel code {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.op-panel {
+  overflow-wrap: anywhere;
+}
+.card.op-fields {
+  padding: 24px;
+  align-items: end;
+}
+.op-fields > .button {
+  justify-self: start;
+}

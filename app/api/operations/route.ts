@@ -10,10 +10,22 @@ import {
   saveCustomer,
   saveWarehouse,
   saveOrder,
+  getOrder,
   changeOrder,
   transaction,
 } from "@/lib/orders";
 import { importOrders } from "@/lib/imports";
+import {
+  openException,
+  exceptionAction,
+  saveRule,
+  applyRule,
+  saveChannel,
+  syncChannel,
+  saveFreight,
+  saveFeedback,
+} from "@/lib/operations";
+import { saveReport, runReport, runScheduledReports } from "@/lib/reports";
 import {
   quoteShipment,
   bookShipment,
@@ -59,6 +71,62 @@ export async function POST(request: Request) {
       db = getDb();
     let result: unknown;
     switch (body.action) {
+      case "exception_open":
+        result = openException(db, user, data);
+        break;
+      case "exception_action":
+        result = exceptionAction(db, user, data);
+        break;
+      case "rule_save":
+        result = saveRule(db, user, data);
+        break;
+      case "rule_preview":
+        result = applyRule(db, user, data);
+        break;
+      case "rule_apply":
+        result = applyRule(db, user, data, true);
+        break;
+      case "channel_save":
+        result = saveChannel(db, user, data);
+        break;
+      case "channel_sync":
+        result = syncChannel(db, user, data);
+        break;
+      case "channel_replay": {
+        const v = record(data),
+          source = getOrder(db, user, text(v.source_id, "Source order"));
+        result = syncChannel(db, user, {
+          channel_id: v.channel_id,
+          events: [
+            {
+              event_key: v.event_key,
+              order: {
+                ...source.details,
+                reference: text(v.reference, "New reference"),
+              },
+            },
+          ],
+        });
+        break;
+      }
+      case "freight_save":
+        result = saveFreight(db, user, data);
+        break;
+      case "feedback_save":
+        result = saveFeedback(db, user, data);
+        break;
+      case "report_save":
+        result = saveReport(db, user, data);
+        break;
+      case "report_run":
+        result = runReport(db, user, text(record(data).id, "Report"));
+        break;
+      case "report_tick":
+        result = {
+          message: "Due local schedules processed.",
+          results: runScheduledReports(db, Date.now(), user),
+        };
+        break;
       case "shipping_quote":
         result = quoteShipment(db, user, data);
         break;

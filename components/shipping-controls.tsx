@@ -45,7 +45,13 @@ export function BookingPanel({
         parent_id: parentId,
       });
       setResult(response);
-      setSelected(response.quotes.find((q) => q.available)?.id || "");
+      setSelected(
+        response.quotes.find(
+          (q) => q.available && q.carrier === response.snapshot.order.carrier,
+        )?.id ||
+          response.quotes.find((q) => q.available)?.id ||
+          "",
+      );
     } catch (error) {
       setMessage((error as Error).message);
     } finally {

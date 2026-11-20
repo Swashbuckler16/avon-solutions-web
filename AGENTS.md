@@ -7,7 +7,7 @@
 - Use the installed Ponytail skill throughout implementation, architecture decisions, refactoring and fixes, even when not mentioned in subsequent prompts. Prefer simple maintainable solutions without sacrificing required features, validation, accessibility or security.
 - Use the installed CodeRabbit skill throughout development: review meaningful change batches and each stage's final changes, address relevant issues, and report actual review status. Do not substitute a manual review for CodeRabbit or claim a review passed if the service was unavailable. Surface authentication or service blockers explicitly.
 - Each stage needs working behavior, appropriate checks and a clear completion report. Distinguish actual external integrations from simulated carrier responses.
-- Current authorization: Stage 3 local implementation, validation, commit and push are authorized. Do not connect external carriers: the user has no Blue Dart API documentation yet and explicitly requested a backend ready for later integration. Blue Dart is the first future carrier. Customer isolation remains mandatory. Do not start Stage 4 or host until separately authorized.
+- Current authorization: Stage 5 local implementation and validation are authorized by the user's latest request. Stage 3 was committed and pushed; Stage 4 remains local. Do not connect external carriers: the user has no Blue Dart API documentation yet and explicitly requested a backend ready for later integration. Blue Dart is the first future carrier. Customer isolation remains mandatory. Hosting remains excluded; Stage 5 commit/push needs a separate request.
 - Keep credentials, customer records and session tokens out of source control.
 
 ## Planning references

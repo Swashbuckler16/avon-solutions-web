@@ -140,13 +140,19 @@ export function writable(user: User) {
     throw new InputError("This account has read-only access.", 403);
 }
 export function transaction<T>(db: DatabaseSync, action: () => T): T {
-  db.exec("BEGIN IMMEDIATE");
+  const savepoint = db.isTransaction
+    ? "nested_" + randomUUID().replaceAll("-", "")
+    : null;
+  db.exec(savepoint ? `SAVEPOINT ${savepoint}` : "BEGIN IMMEDIATE");
   try {
     const result = action();
-    db.exec("COMMIT");
+    db.exec(savepoint ? `RELEASE ${savepoint}` : "COMMIT");
     return result;
   } catch (error) {
-    db.exec("ROLLBACK");
+    if (savepoint) {
+      db.exec(`ROLLBACK TO ${savepoint}`);
+      db.exec(`RELEASE ${savepoint}`);
+    } else db.exec("ROLLBACK");
     throw error;
   }
 }
@@ -398,7 +404,9 @@ function editable(db: DatabaseSync, order: Order) {
   if (
     !["new", "unprocessed"].includes(order.status) ||
     db
-      .prepare("SELECT id FROM shipments WHERE order_id=? AND status<>'cancelled' LIMIT 1")
+      .prepare(
+        "SELECT id FROM shipments WHERE order_id=? AND status<>'cancelled' LIMIT 1",
+      )
       .get(order.id)
   )
     throw new InputError(

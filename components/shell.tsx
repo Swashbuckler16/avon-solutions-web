@@ -32,6 +32,9 @@ const navigation = [
   { href: "/pod", label: "Delivery proofs", icon: ShieldAlert },
   { href: "/exceptions", label: "Exceptions", icon: ShieldAlert },
   { href: "/analytics", label: "Analytics & reports", icon: BarChart3 },
+  { href: "/automation", label: "Shipping rules", icon: Settings2 },
+  { href: "/integrations", label: "Local integrations", icon: Package },
+  { href: "/insights", label: "Freight & feedback", icon: BarChart3 },
 ];
 export function Shell({
   user,
@@ -145,7 +148,7 @@ export function Shell({
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
-            <span className="phase-label">SHIPPING · STAGE 3</span>
+            <span className="phase-label">LOCAL SHIPPING WORKSPACE</span>
             <strong>Built for what’s next.</strong>
             <p>
               A simpler workspace.

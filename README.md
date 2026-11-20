@@ -1,6 +1,6 @@
 # Avon Operations
 
-A small-scale, local shipping workspace. Stage 2 adds isolated customer logins, pickup locations, persistent order workflows, spreadsheet imports and CSV exports to the authenticated SQLite workspace. Stage 3 adds local simulated shipping, tracking, returns and POD review; analytics remains a later-stage module. No live carrier is connected.
+A small-scale, local shipping workspace with isolated customer logins, pickup locations, persistent orders, spreadsheet imports, simulated shipping, tracking, returns, POD review, exceptions, rules, analytics, scheduled reports, channel replay, freight comparisons and feedback. Stage 5 adds verified backup/restore, larger-dataset validation and release polish. No live carrier is connected. See [local release guide](docs/local-release.md) for startup, recovery, acceptance coverage and known limits.
 
 ## Run locally
 
@@ -34,13 +34,13 @@ The HTTP check requires a production build and starts its own temporary database
 - Roles: Admin (including team directory), Operator, Viewer. Each user can edit their own display name; roles cannot be changed through that endpoint.
 - Sample fixtures: three warehouses, 48 orders and related shipment snapshots. Fictional business names and simulator records only.
 - Sessions: eight hours, HTTP-only cookie, opaque token hash at rest, immediate logout revocation.
-- Backup: stop all app processes, then copy the entire `.local/` directory to a private location. Restore it with the app stopped. Keep the matching migration/source version. Do not copy a live SQLite main file alone while its WAL is in use.
+- Backup: `npm run db:backup -- .local/backups/avon-backup.sqlite`. Restore to a new file with `npm run db:restore -- .local/backups/avon-backup.sqlite .local/avon-restored.sqlite`. Existing files are never overwritten. See the release guide before switching databases. Do not copy a live SQLite main file alone while its WAL is in use.
 
 ## Delivery workflow
 
 Ponytail is mandatory for implementation simplicity; CodeRabbit is mandatory for meaningful reviews and stage completion. Review results and limitations are recorded honestly. Review commands may require the normal Windows environment because the sandbox cannot see the saved CLI login.
 
-Stage 3 local implementation is authorized. The user explicitly excluded external carrier connections; hosting and Stage 4 are not authorized. See `AGENTS.md`, `docs/five-stage-roadmap.md`, `docs/stage-1-specification.md` and `docs/stage-1-validation.md`.
+Stage 5 local implementation and validation are authorized. External carrier connections and hosting remain excluded. See `AGENTS.md` and `docs/five-stage-roadmap.md`.
 
 ## Assets
 
@@ -50,7 +50,7 @@ Original CSS/layout and wordmark. Lucide icons (ISC) and DM Sans/Manrope fonts (
 
 An Avon administrator creates a customer under Customers, selects that record and creates its login. The random password is shown once; share it privately. Customer accounts use the operator permission set with a server-enforced customer scope. Deactivating a customer invalidates its sessions and blocks new logins. There is no public signup or password-reset flow in this local release.
 
-Create a pickup location for the customer, then use Orders to create a dispatch with recipient, products, invoice reference and package details. Prices are final unit prices inclusive of any tax; the system stores an invoice reference rather than issuing a tax invoice. A preferred carrier is informational until Stage 3. Customers see only their own records; Avon staff can work across customers. Viewers cannot mutate records.
+Create a pickup location for the customer, then use Orders to create a dispatch with recipient, products, invoice reference and package details. Prices are final unit prices inclusive of any tax; the system stores an invoice reference rather than issuing a tax invoice. A preferred carrier preselects a matching available simulated service; booking still requires confirmation. Customers see only their own records; Avon staff can work across customers. Viewers cannot mutate records.
 
 Imports accept CSV, TSV and XLSX (first sheet), up to 1 MB and 500 orders per file. One row creates one order with one item/package; edit it afterwards to add more. Download the template, map columns, validate, then import valid rows. Failed rows can be corrected and retried; existing platform-wide references are skipped, never overwritten. Mappings are private to the signed-in account. Exports cover all matching orders, up to 10,000 rows, and escape spreadsheet formulas. Files and real customer data must never be committed.
 
@@ -63,3 +63,7 @@ Open a ready order and choose **Create shipment**. Fetch simulated services, sel
 Shipment details provide test labels/invoice summaries, cancellation before pickup, and a staff-only event-replay form. Use unique event IDs and ISO 8601 occurrence times (blank uses now). Replaying the same event preserves its timestamp and does not duplicate it. Delivered forward shipments can create a full return; after reverse delivery, Avon staff record its quality result. Delivered shipments accept private PNG/JPEG proof images for staff verification.
 
 Read docs/stage-3-validation.md for evidence and limits, and docs/carrier-integration-contract.md for the Blue Dart integration boundary. Do not use SIM-prefixed waybills or test labels with a real carrier.
+
+## Stage 4 local operations
+
+See docs/stage-4-validation.md for behavior, limits and validation. Use npm run scheduler for a single due-report pass, or npm run scheduler -- --watch while the computer is on. Reports stay in the private local outbox; no email, carrier or store service is contacted.

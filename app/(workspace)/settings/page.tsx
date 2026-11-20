@@ -32,7 +32,7 @@ export default async function Settings({
       <PageHeading
         eyebrow="MAKE YOURSELF AT HOME"
         title="Workspace settings"
-        description="Your profile, your team, and the foundation underneath."
+        description="Manage your profile and check local workspace information."
       />
       {params.saved && (
         <div className="alert alert-success" role="status">
@@ -84,7 +84,7 @@ export default async function Settings({
           <div className="card-heading">
             <div>
               <h2>Workspace details</h2>
-              <p className="muted">A local foundation, ready to grow</p>
+              <p className="muted">Persistent local data and simulated shipping</p>
             </div>
             <span className="settings-icon">
               <Database size={21} />
@@ -113,7 +113,7 @@ export default async function Settings({
             </div>
             <div>
               <dt>Current release</dt>
-              <dd>Stage 3 · Local shipping simulator</dd>
+              <dd>Stage 5 · Local working model</dd>
             </div>
           </dl>
           <div className="notice">

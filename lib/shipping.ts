@@ -509,6 +509,34 @@ export function replayTracking(
         "UPDATE shipments SET status=?,last_event_at=?,revision=revision+1,qa_status=CASE WHEN direction='reverse' AND ?='delivered' THEN 'pending' ELSE qa_status END WHERE id=?",
       ).run(status, occurred, status, id);
     audit(db, user, id, "tracking_replayed", eventKey + ": " + disposition);
+    if (
+      applied &&
+      status === "exception" &&
+      !db
+        .prepare(
+          "SELECT id FROM exception_cases WHERE shipment_id=? AND status<>'resolved'",
+        )
+        .get(id)
+    ) {
+      const caseId = randomUUID();
+      db.prepare(
+        "INSERT INTO exception_cases(id,shipment_id,kind,reason,created_at) VALUES (?,?,?,?,?)",
+      ).run(
+        caseId,
+        id,
+        s.status === "info_received" ? "npr" : "ndr",
+        note || "Simulated tracking exception",
+        now,
+      );
+      db.prepare(
+        "INSERT INTO exception_history(case_id,user_id,action,note,created_at) VALUES (?,?,'opened',?,?)",
+      ).run(
+        caseId,
+        user.id,
+        "Created by local tracking replay: " + eventKey,
+        now,
+      );
+    }
     return {
       applied,
       disposition,

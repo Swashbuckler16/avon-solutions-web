@@ -53,7 +53,7 @@ export default async function Dashboard({
             connections.
           </span>
         </span>
-        <span className="sample-tag">STAGE 3</span>
+        <span className="sample-tag">LOCAL MODEL</span>
       </div>
       <div className="section-toolbar">
         <div className="section-title">
