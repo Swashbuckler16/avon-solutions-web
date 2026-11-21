@@ -223,7 +223,7 @@ export function transformOrder(db: DatabaseSync, user: User, input: unknown) {
         );
       const notes = [
         ...new Set(sources.map((s) => s.details.notes).filter(Boolean)),
-      ].join("\n");
+      ].join("; ");
       if (notes.length > 500)
         throw new InputError(
           "Combined notes exceed 500 characters. Resolve source notes before merging.",
@@ -285,8 +285,8 @@ export function bulkQuotes(db: DatabaseSync, user: User, input: unknown) {
     strategy = text(v.strategy ?? "cheapest", "Strategy");
   if (!["cheapest", "fastest", "balanced"].includes(strategy))
     throw new InputError("Unknown allocation strategy.");
-  if (!Array.isArray(v.orders) || !v.orders.length || v.orders.length > 100)
-    throw new InputError("Select 1–100 orders.");
+  if (!Array.isArray(v.orders) || !v.orders.length || v.orders.length > 500)
+    throw new InputError("Select 1–500 orders.");
   return v.orders.map((raw) => {
     let id = "Invalid order";
     try {
@@ -334,8 +334,8 @@ export function bulkQuotes(db: DatabaseSync, user: User, input: unknown) {
 export function bulkBook(db: DatabaseSync, user: User, input: unknown) {
   writable(user);
   const v = record(input);
-  if (!Array.isArray(v.rows) || !v.rows.length || v.rows.length > 100)
-    throw new InputError("Confirm 1–100 prepared quotes.");
+  if (!Array.isArray(v.rows) || !v.rows.length || v.rows.length > 500)
+    throw new InputError("Confirm 1–500 prepared quotes.");
   return {
     results: v.rows.map((raw, index) => {
       let id = `Entry ${index + 1}`;
@@ -365,8 +365,8 @@ export function trackingImport(
 ) {
   staffOnly(user);
   const v = record(input);
-  if (!Array.isArray(v.rows) || !v.rows.length || v.rows.length > 500)
-    throw new InputError("Import 1–500 tracking rows.");
+  if (!Array.isArray(v.rows) || !v.rows.length || v.rows.length > 1000)
+    throw new InputError("Import 1–1,000 tracking rows.");
   const rows = v.rows;
   const processRows = () => ({
     results: rows.map((raw, index) => {

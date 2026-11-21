@@ -11,6 +11,7 @@ import {
 } from "./orders.ts";
 import { csv } from "./order-format.ts";
 import { integer } from "./operations.ts";
+import { performance } from "./performance.ts";
 
 export type ReportFilters = {
   from: string;
@@ -20,6 +21,7 @@ export type ReportFilters = {
   mode: string;
   direction: string;
   customer_id: string;
+  last_days: string;
 };
 export function reportFilters(input: unknown): ReportFilters {
   const v = record(input),
@@ -47,7 +49,10 @@ export function reportFilters(input: unknown): ReportFilters {
   )
     throw new InputError("Invalid report filter.");
   const customer_id = text(v.customer_id ?? "", "Customer", 160, false);
-  return { from, to, carrier, status, mode, direction, customer_id };
+  const last_days = String(integer(v.last_days || 0, "Rolling days", 0, 365));
+  if (last_days !== "0" && (from || to))
+    throw new InputError("Choose fixed dates or a rolling window, not both.");
+  return { from, to, carrier, status, mode, direction, customer_id, last_days };
 }
 export function reportRows(
   db: DatabaseSync,
@@ -58,6 +63,12 @@ export function reportRows(
   const f = reportFilters(input),
     where: string[] = [],
     values: SQLInputValue[] = [];
+  if (Number(f.last_days)) {
+    f.to = new Date().toISOString().slice(0, 10);
+    f.from = new Date(Date.parse(f.to) - (Number(f.last_days) - 1) * 86400000)
+      .toISOString()
+      .slice(0, 10);
+  }
   if (user.customer_id) {
     where.push("o.customer_id=?");
     values.push(user.customer_id);
@@ -83,11 +94,11 @@ export function reportRows(
     }
   const rows = db
     .prepare(
-      `SELECT s.id,s.awb,s.status,s.carrier,s.service,s.mode,s.direction,s.created_date,s.created_at,s.price_paise,s.qa_status,o.reference,o.customer,o.customer_id,
+      `SELECT s.id,s.order_id,s.awb,s.status,s.carrier,s.service,s.mode,s.direction,s.created_date,s.created_at,s.price_paise,s.qa_status,s.expected_delivery_at,s.last_event_at,s.snapshot,o.reference,o.customer,o.customer_id,
     (SELECT MIN(occurred_at) FROM tracking_events t WHERE t.shipment_id=s.id AND t.status='delivered' AND t.applied=1) delivered_at,
     (SELECT count(*) FROM exception_cases e WHERE e.shipment_id=s.id AND e.status<>'resolved') open_cases,
     (SELECT status FROM delivery_proofs p WHERE p.shipment_id=s.id ORDER BY created_at DESC,id DESC LIMIT 1) proof_status,
-    f.quoted_paise,f.invoiced_paise,f.invoice_ref,f.revision freight_revision,b.score,b.note feedback_note,b.revision feedback_revision
+    f.quoted_paise,f.invoiced_paise,f.invoice_ref,f.resolution,f.resolution_note,f.revision freight_revision,b.score,b.note feedback_note,b.revision feedback_revision
     FROM shipments s JOIN orders o ON o.id=s.order_id LEFT JOIN freight_entries f ON f.shipment_id=s.id LEFT JOIN shipment_feedback b ON b.shipment_id=s.id
     ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY s.created_date DESC,s.created_at DESC,s.id DESC LIMIT ${search === undefined ? 5001 : 50}`,
     )
@@ -121,7 +132,7 @@ export function analytics(db: DatabaseSync, user: User, input: unknown) {
     rows,
     carriers,
     total: rows.length,
-    orders: new Set(rows.map((r) => r.reference)).size,
+    orders: new Set(rows.map((r) => r.order_id)).size,
     delivered: delivered.length,
     deliveryPercent: rows.length
       ? Math.round((delivered.length / rows.length) * 100)
@@ -213,6 +224,7 @@ export function reportDefinitions(db: DatabaseSync, user: User) {
           interval_hours: number;
           next_run: number;
           revision: number;
+          format: string;
           filters: ReportFilters;
         },
     );
@@ -223,6 +235,9 @@ export function saveReport(db: DatabaseSync, user: User, input: unknown) {
     name = text(v.name, "Name", 80),
     filters = reportFilters(v.filters),
     hours = integer(v.interval_hours, "Schedule hours", 0, 720);
+  const format = text(v.format ?? "csv", "Report format");
+  if (!["csv", "xlsx"].includes(format))
+    throw new InputError("Choose CSV or XLSX.");
   if (hours && hours < 1)
     throw new InputError("Schedule must be hourly or slower.");
   return transaction(db, () => {
@@ -254,6 +269,10 @@ export function saveReport(db: DatabaseSync, user: User, input: unknown) {
         hours,
         Date.now() + hours * 3600000,
       );
+    db.prepare("UPDATE report_definitions SET format=? WHERE id=?").run(
+      format,
+      id,
+    );
     return {
       id,
       message: "Report saved. Scheduled output stays in the local outbox.",
@@ -273,10 +292,15 @@ export function runReport(
       .get(id, user.id);
     if (!definition) throw new InputError("Report not found.", 404);
     let content = "",
+      workbook = "",
       status = "ready",
       message = "CSV generated in local outbox. No email sent.";
     try {
       content = reportCsv(db, user, JSON.parse(String(definition.filters)));
+      if (definition.format === "xlsx")
+        workbook = JSON.stringify(
+          reportWorkbook(db, user, JSON.parse(String(definition.filters))),
+        );
     } catch (error) {
       if (!(error instanceof InputError)) throw error;
       status = "failed";
@@ -286,6 +310,11 @@ export function runReport(
     db.prepare(
       "INSERT INTO report_runs(id,definition_id,user_id,created_at,status,message,content,recipient) VALUES (?,?,?,?,?,?,?,?)",
     ).run(run, id, user.id, now, status, message, content, user.email);
+    if (status === "ready")
+      message = `${String(definition.format).toUpperCase()} snapshot generated locally. No email sent.`;
+    db.prepare(
+      "UPDATE report_runs SET format=?,workbook=?,message=? WHERE id=?",
+    ).run(definition.format, workbook, message, run);
     return { id: run, message, status };
   });
 }
@@ -332,7 +361,7 @@ export function runScheduledReports(
 export function reportRuns(db: DatabaseSync, user: User) {
   return db
     .prepare(
-      "SELECT r.id,r.created_at,r.status,r.message,r.recipient,r.delivery,d.name FROM report_runs r JOIN report_definitions d ON d.id=r.definition_id WHERE r.user_id=? ORDER BY r.created_at DESC,r.id DESC LIMIT 100",
+      "SELECT r.id,r.created_at,r.status,r.message,r.recipient,r.delivery,r.format,d.name FROM report_runs r JOIN report_definitions d ON d.id=r.definition_id WHERE r.user_id=? ORDER BY r.created_at DESC,r.id DESC LIMIT 100",
     )
     .all(user.id)
     .map((r) => ({ ...r }));
@@ -345,4 +374,117 @@ export function reportDownload(db: DatabaseSync, user: User, id: string) {
   if (row.status !== "ready")
     throw new InputError("Failed report has no download.", 409);
   return String(row.content);
+}
+
+export type Workbook = { name: string; rows: (string | number)[][] }[];
+export function reportWorkbook(
+  db: DatabaseSync,
+  user: User,
+  input: unknown,
+): Workbook {
+  const data = analytics(db, user, input),
+    p = performance(data.rows);
+  return [
+    {
+      name: "Summary",
+      rows: [
+        ["Metric", "Value"],
+        ["Shipments", data.total],
+        ["Distinct orders", data.orders],
+        ["Delivered", data.delivered],
+        ["Early", p.early],
+        ["On estimated day", p.onTime],
+        ["Late", p.late],
+        ["Unknown estimate", p.unknown],
+        ["Open overdue", p.overdue],
+        ["Stale over 7 days", p.stale],
+        ["NPS", data.nps ?? "No responses"],
+        ["Freight variance INR", data.variancePaise / 100],
+        [
+          "Definition",
+          "Creation-date cohort, UTC. Estimated dates are local simulation estimates, not carrier SLAs.",
+        ],
+      ],
+    },
+    {
+      name: "Shipments",
+      rows: [
+        [
+          "Reference",
+          "Waybill",
+          "Customer",
+          "Carrier",
+          "Status",
+          "Direction",
+          "Created UTC",
+          "Estimated delivery UTC",
+          "Actual delivery UTC",
+          "Simulated INR",
+          "Invoice INR",
+          "Variance INR",
+          "Resolution",
+          "Feedback score",
+        ],
+        ...data.rows.map((r) => [
+          String(r.reference),
+          String(r.awb || ""),
+          String(r.customer),
+          String(r.carrier),
+          String(r.status),
+          String(r.direction),
+          String(r.created_date),
+          r.expected_delivery_at
+            ? new Date(Number(r.expected_delivery_at)).toISOString()
+            : "",
+          r.delivered_at ? new Date(Number(r.delivered_at)).toISOString() : "",
+          Number(r.price_paise) / 100,
+          r.invoiced_paise == null ? "" : Number(r.invoiced_paise) / 100,
+          r.invoiced_paise == null
+            ? ""
+            : (Number(r.invoiced_paise) - Number(r.quoted_paise)) / 100,
+          String(r.resolution || ""),
+          r.score == null ? "" : Number(r.score),
+        ]),
+      ],
+    },
+    {
+      name: "Regions",
+      rows: [["Destination country / state", "Shipments"], ...p.regions],
+    },
+    { name: "Daily", rows: [["Created UTC", "Shipments"], ...p.days] },
+    {
+      name: "Products",
+      rows: [
+        ["SKU or product (top 20)", "Units in distinct forward orders"],
+        ...p.products,
+      ],
+    },
+    {
+      name: "Customers",
+      rows: [["Customer (top 20)", "Distinct forward orders"], ...p.customers],
+    },
+    {
+      name: "Filters",
+      rows: [
+        ["Filter", "Value"],
+        ...Object.entries(reportFilters(input)),
+        ["Generated UTC", new Date().toISOString()],
+      ],
+    },
+  ];
+}
+export function savedWorkbook(
+  db: DatabaseSync,
+  user: User,
+  id: string,
+): Workbook {
+  const r = db
+    .prepare(
+      "SELECT workbook,status,format FROM report_runs WHERE id=? AND user_id=?",
+    )
+    .get(id, user.id);
+  if (!r) throw new InputError("Report run not found.", 404);
+  if (r.status !== "ready" || r.format !== "xlsx")
+    throw new InputError("This run has no Excel snapshot.", 409);
+  return JSON.parse(String(r.workbook));
 }

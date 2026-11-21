@@ -186,16 +186,14 @@ export function quoteShipment(
     const services = manual.length
       ? manual
       : !parentId && data.shipping?.country && data.shipping.country !== "IN"
-        ? fictional
-            .slice(0, 1)
-            .map((s) => ({
-              ...s,
-              carrier: "Local simulator",
-              service: "Simulated international",
-              eta_days: 10,
-              reason:
-                "Fictional international service; no customs clearance or carrier availability verified.",
-            }))
+        ? fictional.slice(0, 1).map((s) => ({
+            ...s,
+            carrier: "Local simulator",
+            service: "Simulated international",
+            eta_days: 10,
+            reason:
+              "Fictional international service; no customs clearance or carrier availability verified.",
+          }))
         : fictional;
     const quotes = services.map((service) => {
       if (!service.available)
@@ -353,6 +351,10 @@ export function bookShipment(
       JSON.stringify(quote.snapshot),
       now,
       now,
+    );
+    db.prepare("UPDATE shipments SET expected_delivery_at=? WHERE id=?").run(
+      now + quote.eta_days * 86400000,
+      id,
     );
     db.prepare(
       "INSERT INTO tracking_events(shipment_id,event_key,status,location,note,occurred_at,received_at,applied,disposition,raw) VALUES (?,'booking','info_received',?,'Simulated booking accepted',?,?,1,'applied',?)",

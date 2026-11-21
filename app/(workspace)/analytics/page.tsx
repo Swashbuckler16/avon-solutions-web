@@ -15,6 +15,16 @@ import {
 } from "@/lib/shipping-format";
 import { PageHeading } from "@/components/ui";
 import { OperationForm } from "@/components/operations-controls";
+import { PerformancePanels } from "@/components/performance-panels";
+const formatField = {
+  name: "format",
+  label: "Download format",
+  value: "xlsx",
+  options: [
+    { value: "xlsx", label: "Excel workbook (.xlsx)" },
+    { value: "csv", label: "CSV" },
+  ],
+};
 export default async function Analytics({
   searchParams,
 }: {
@@ -48,6 +58,14 @@ export default async function Analytics({
           Freight & feedback
         </Link>
         {data && (
+          <a
+            className="button button-secondary"
+            href={"/api/reports?" + query + "&format=xlsx"}
+          >
+            Download Excel workbook
+          </a>
+        )}
+        {data && (
           <a className="button" href={"/api/reports?" + query}>
             Download filtered CSV
           </a>
@@ -68,6 +86,16 @@ export default async function Analytics({
         <label className="op-field">
           From
           <input type="date" name="from" defaultValue={filters.from} />
+        </label>
+        <label className="op-field">
+          Rolling window (clear fixed dates)
+          <select name="last_days" defaultValue={filters.last_days}>
+            <option value="0">Use fixed dates / all time</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
         </label>
         <label className="op-field">
           To
@@ -179,6 +207,7 @@ export default async function Analytics({
             </div>
             {!data.total && <p>No shipments match these filters.</p>}
           </section>
+          <PerformancePanels rows={data.rows} />
         </>
       )}
       {write && data && (
@@ -187,6 +216,7 @@ export default async function Analytics({
           title="Save these report filters"
           data={{ filters }}
           fields={[
+            formatField,
             { name: "name", label: "Report name" },
             {
               name: "interval_hours",
@@ -237,7 +267,7 @@ export default async function Analytics({
                   action="report_run"
                   title="Generate now"
                   data={{ id: d.id }}
-                  button="Generate CSV"
+                  button={`Generate ${d.format.toUpperCase()}`}
                 />
                 <OperationForm
                   key={String(d.revision)}
@@ -245,6 +275,7 @@ export default async function Analytics({
                   title="Edit schedule / pause"
                   data={{ id: d.id, revision: d.revision, filters: d.filters }}
                   fields={[
+                    { ...formatField, value: d.format },
                     {
                       name: "name",
                       label: "Report name",
@@ -288,7 +319,9 @@ export default async function Analytics({
             </p>
             <p>{String(r.message)}</p>
             {r.status === "ready" && (
-              <a href={"/api/reports?run=" + r.id}>Download generated CSV</a>
+              <a href={"/api/reports?run=" + r.id + "&format=" + r.format}>
+                Download generated {String(r.format).toUpperCase()}
+              </a>
             )}
           </article>
         ))}

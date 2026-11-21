@@ -2599,4 +2599,151 @@ input[type="checkbox"] {
 }
 .op-fields > .button {
   justify-self: start;
+  align-self: end;
+}
+
+/* Stage 7 account display preferences. Print documents keep their paper palette. */
+.app-shell {
+  background: var(--page);
+  color: var(--ink);
+}
+.custom-brand {
+  display: block;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 750;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.is-collapsed .custom-brand {
+  font-size: 11px;
+}
+.app-shell[data-accent="blue"] {
+  --teal: #2563a8;
+  --teal-dark: #133451;
+}
+.app-shell[data-accent="violet"] {
+  --teal: #7041a5;
+  --teal-dark: #312047;
+}
+.app-shell[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #101b23;
+  --surface: #192932;
+  --ink: #e4eff3;
+  --muted: #a9bbc4;
+  --line: #38505d;
+  --mint: #233e39;
+}
+@media (prefers-color-scheme: dark) {
+  .app-shell[data-theme="system"] {
+    color-scheme: dark;
+    --page: #101b23;
+    --surface: #192932;
+    --ink: #e4eff3;
+    --muted: #a9bbc4;
+    --line: #38505d;
+    --mint: #233e39;
+  }
+}
+.app-shell
+  :is(
+    .card,
+    .topbar,
+    .filter-bar,
+    .pagination,
+    .table-toolbar,
+    .op-panel,
+    input,
+    select,
+    textarea
+  ) {
+  background-color: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.app-shell
+  :is(
+    th,
+    .muted,
+    .field-help,
+    .page-description,
+    .breadcrumb,
+    .settings-card p,
+    .app-footer
+  ) {
+  color: var(--muted);
+}
+.app-shell
+  :is(
+    th,
+    .table-scroll tr:hover,
+    .button-secondary,
+    .icon-button,
+    .status-tabs,
+    .op-fieldset
+  ) {
+  background-color: var(--page);
+  color: var(--ink);
+}
+.app-shell .button-secondary {
+  border-color: var(--line);
+}
+.app-shell :is(td, .order-reference, .status-list strong, .user-menu strong) {
+  color: var(--ink);
+}
+.app-shell :is(td, th) {
+  border-color: var(--line);
+}
+.app-shell tbody tr:hover {
+  background: var(--page);
+}
+.app-shell
+  :is(
+    .metric-top,
+    .metric-note,
+    .status-list li,
+    .chart-foot,
+    .chart-axis,
+    .chart-day > span
+  ) {
+  color: var(--muted);
+}
+.app-shell .metric-accent {
+  background: var(--mint);
+  border-color: var(--line);
+}
+.app-shell .metric-accent strong {
+  color: var(--ink);
+}
+.app-shell .warehouse-grid article {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.app-shell :is(.details-list dt, .warehouse-code, .warehouse-grid p) {
+  color: var(--muted);
+}
+.workspace-preferences form {
+  margin: 18px 0;
+}
+.app-shell[data-density="compact"] :is(td, th) {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.region-map {
+  width: 100%;
+  max-width: 650px;
+  height: auto;
+  display: block;
+  margin: 18px auto;
+}
+@media print {
+  .app-shell[data-theme] {
+    color-scheme: light;
+    --page: #fff;
+    --surface: #fff;
+    --ink: #192d34;
+    --muted: #68797f;
+    --line: #e5ebed;
+  }
 }

@@ -72,4 +72,7 @@ See docs/stage-4-validation.md for behavior, limits and validation. Use npm run 
 
 Open **Dispatch planning** for manual rate cards, cost/delivery allocation, SKU packing and pickup allocation, safe split/merge, reviewed bulk simulated bookings and staff tracking-file imports. The order editor now records international declarations and appointment requests. See [Phase 6 guide and checks](docs/phase-6-validation.md) for exact rules and limits and [Phases 6–7 plan](docs/phase-6-and-7.md) for the remaining scope. SQLite remains in use; migration 007 preserves existing records. Carrier connections and hosting remain excluded.
 
-The earlier split/merge exclusion described Stage 2; Phase 6 implements the documented unbooked-order rules. It does not merge different invoice references or already-booked shipments. Phase 7 is not started.
+The earlier split/merge exclusion described Stage 2; Phase 6 implements the documented unbooked-order rules. It does not merge different invoice references or already-booked shipments. Stage 7 extends this local model as described below.
+## Stage 7 local expansion
+
+The final local expansion adds delivery-performance analytics and a schematic regional map, Excel report snapshots with rolling schedules, freight reconciliation, bulk feedback, account display preferences and larger imports. See [Stage 7 usage, validation and limits](docs/stage-7-validation.md). SQLite remains local; live carriers and hosting are excluded. Run `npm.cmd run dev` and open Analytics & reports, Freight & feedback, or Workspace settings.

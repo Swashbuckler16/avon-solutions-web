@@ -46,6 +46,37 @@ export function OrderImport({
     setPreview(false);
     setResults([]);
   };
+  async function submitRows(commit: boolean) {
+    const combined: Result[] = [],
+      seen = new Set<string>();
+    for (let start = 0; start < rows.length; start += 250) {
+      setMessage(
+        `${commit ? "Importing" : "Validating"} rows ${start + 1}–${Math.min(start + 250, rows.length)} of ${rows.length}…`,
+      );
+      const batch = await operation<Result[]>(commit ? "import" : "preview", {
+        rows: rows.slice(start, start + 250),
+        mapping,
+        customer_id: customer,
+        warehouse_id: warehouse,
+      });
+      for (const r of batch) {
+        const key = r.reference.toLowerCase();
+        combined.push({
+          ...r,
+          row: r.row + start,
+          ...(!commit && seen.has(key)
+            ? {
+                status: "error",
+                message: "Duplicate reference within this file.",
+              }
+            : {}),
+        });
+        seen.add(key);
+      }
+      setResults([...combined]);
+    }
+    return combined;
+  }
   return (
     <>
       <section className="card op-panel">
@@ -53,8 +84,10 @@ export function OrderImport({
         <p>
           One row = one order, one product and one package. Add more
           products/packages in the order editor after import. CSV, TSV or XLSX
-          (first sheet), up to 1 MB and 500 orders. Use YYYY-MM-DD invoice dates
-          and text cells for phone/PIN/HSN codes.
+          (first sheet), up to 5 MB and 5,000 orders, processed in batches of
+          250. Completed batches remain saved if a later request fails; retry
+          safely skips existing references. Use YYYY-MM-DD invoice dates and
+          text cells for phone/PIN/HSN codes.
         </p>
         <div className="op-grid">
           <label className="op-field">
@@ -107,6 +140,7 @@ export function OrderImport({
             accept=".csv,.tsv,.xlsx"
             onChange={async (e) => {
               const file = e.target.files?.[0];
+              e.target.value = "";
               reset();
               setRows([]);
               setHeaders([]);
@@ -114,9 +148,9 @@ export function OrderImport({
               if (!file) return;
               setBusy(true);
               try {
-                if (file.size > 1_000_000)
+                if (file.size > 5_000_000)
                   throw new Error(
-                    "File exceeds 1 MB. Split it into smaller files.",
+                    "File exceeds 5 MB. Split it into smaller files.",
                   );
                 let table: unknown[][];
                 if (file.name.toLowerCase().endsWith(".xlsx")) {
@@ -131,9 +165,9 @@ export function OrderImport({
                     max_record_size: 20000,
                   });
                 } else throw new Error("Choose CSV, TSV or XLSX.");
-                if (table.length < 2 || table.length > 501)
+                if (table.length < 2 || table.length > 5001)
                   throw new Error(
-                    "File must contain a header and 1–500 data rows.",
+                    "File must contain a header and 1–5,000 data rows.",
                   );
                 const names = table[0].map((x) => String(x ?? "").trim());
                 if (
@@ -314,14 +348,7 @@ export function OrderImport({
               setBusy(true);
               setPreview(false);
               try {
-                setResults(
-                  await operation("preview", {
-                    rows,
-                    mapping,
-                    customer_id: customer,
-                    warehouse_id: warehouse,
-                  }),
-                );
+                setResults(await submitRows(false));
                 setPreview(true);
                 setMessage("Preview checked. Nothing has been imported yet.");
               } catch (error) {
@@ -354,14 +381,7 @@ export function OrderImport({
                 setBusy(true);
                 setPreview(false);
                 try {
-                  setResults(
-                    await operation("import", {
-                      rows,
-                      mapping,
-                      customer_id: customer,
-                      warehouse_id: warehouse,
-                    }),
-                  );
+                  setResults(await submitRows(true));
                   setMessage(
                     "Import completed. Correct failed rows and upload again; existing references will be skipped.",
                   );

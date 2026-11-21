@@ -22,6 +22,7 @@ export function openDatabase(path: string) {
     "005-operations.sql",
     "006-exception-followup.sql",
     "007-dispatch.sql",
+    "008-final-workspace.sql",
   ].entries()) {
     const version = index + 1;
     if (

@@ -19,8 +19,8 @@ import {
   CircleHelp,
   ArrowUpRight,
 } from "lucide-react";
-import { Brand } from "./ui";
 import type { User } from "@/lib/auth-core";
+import type { workspace } from "@/lib/workspace";
 
 const navigation = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -39,9 +39,11 @@ const navigation = [
 ];
 export function Shell({
   user,
+  settings,
   children,
 }: {
   user: User;
+  settings: ReturnType<typeof workspace>;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -89,6 +91,9 @@ export function Shell({
     )?.label || "Workspace settings";
   return (
     <div
+      data-theme={settings.preferences.theme}
+      data-density={settings.preferences.density}
+      data-accent={settings.brand.accent}
       className={`app-shell ${collapsed ? "is-collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}
     >
       <a className="skip-link" href="#main">
@@ -111,7 +116,7 @@ export function Shell({
       >
         <div className="sidebar-brand">
           <Link href="/dashboard" aria-label="Avon overview">
-            <Brand light />
+            <span className="custom-brand">{settings.brand.name}</span>
           </Link>
           <button
             className="mobile-close icon-button"
@@ -122,9 +127,9 @@ export function Shell({
           </button>
         </div>
         <div className="workspace-label">
-          <span className="workspace-avatar">A</span>
+          <span className="workspace-avatar">{settings.brand.initials}</span>
           <div>
-            <strong>Avon workspace</strong>
+            <strong>{settings.brand.name}</strong>
             <small>
               Local environment <span className="live-dot" />
             </small>
@@ -241,7 +246,7 @@ export function Shell({
           {children}
         </main>
         <footer className="app-footer">
-          <span>Avon Solutions & Logistics</span>
+          <span>{settings.brand.name}</span>
           <span>
             Made for smoother operations <span className="footer-dot">•</span>{" "}
             Local preview

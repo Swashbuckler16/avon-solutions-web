@@ -5,6 +5,7 @@ import { reportRows } from "@/lib/reports";
 import { formatINR } from "@/lib/shipping-format";
 import { PageHeading } from "@/components/ui";
 import { OperationForm } from "@/components/operations-controls";
+import { ReconciliationFile } from "@/components/reconciliation-file";
 export default async function Insights({
   searchParams,
 }: {
@@ -37,6 +38,8 @@ export default async function Insights({
         </label>
         <button className="button">Search</button>
       </form>
+      {staff && <ReconciliationFile kind="freight" />}
+      {user.role !== "viewer" && <ReconciliationFile kind="feedback" />}
       <p>
         Showing up to 50 matching simulator shipments. Narrow the search to
         locate older records.
@@ -58,6 +61,46 @@ export default async function Insights({
               : formatINR(Number(r.invoiced_paise) - Number(r.quoted_paise))}
             . Feedback: {r.score == null ? "Not recorded" : `${r.score}/10`}
           </p>
+          {r.invoiced_paise != null && (
+            <p>
+              Invoice: {String(r.invoice_ref)} · Reconciliation:{" "}
+              {String(r.resolution)} · Revision {String(r.freight_revision)}.{" "}
+              {String(r.resolution_note || "")}
+            </p>
+          )}
+          {r.score != null && (
+            <p>
+              Feedback revision {String(r.feedback_revision)} ·{" "}
+              {String(r.feedback_note || "")}
+            </p>
+          )}
+          {staff && r.invoiced_paise != null && (
+            <details>
+              <summary>Track freight discrepancy</summary>
+              <OperationForm
+                action="freight_resolve"
+                title="Discrepancy resolution"
+                data={{ shipment_id: r.id, revision: r.freight_revision }}
+                fields={[
+                  {
+                    name: "resolution",
+                    label: "Resolution",
+                    value: String(r.resolution),
+                    options: [
+                      { value: "open", label: "Open" },
+                      { value: "disputed", label: "Disputed" },
+                      { value: "resolved", label: "Resolved" },
+                    ],
+                  },
+                  {
+                    name: "note",
+                    label: "Resolution note",
+                    value: String(r.resolution_note || ""),
+                  },
+                ]}
+              />
+            </details>
+          )}
           {staff && (
             <details>
               <summary>Record or amend supplied freight comparison</summary>

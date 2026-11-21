@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/auth";
 import { can, type User } from "@/lib/auth-core";
 import { getDb } from "@/lib/db";
 import { PageHeading } from "@/components/ui";
+import { workspace } from "@/lib/workspace";
+import { WorkspaceSettings } from "@/components/workspace-settings";
 
 export default async function Settings({
   searchParams,
@@ -84,7 +86,9 @@ export default async function Settings({
           <div className="card-heading">
             <div>
               <h2>Workspace details</h2>
-              <p className="muted">Persistent local data and simulated shipping</p>
+              <p className="muted">
+                Persistent local data and simulated shipping
+              </p>
             </div>
             <span className="settings-icon">
               <Database size={21} />
@@ -113,7 +117,7 @@ export default async function Settings({
             </div>
             <div>
               <dt>Current release</dt>
-              <dd>Stage 5 · Local working model</dd>
+              <dd>Stage 7 · Local working model</dd>
             </div>
           </dl>
           <div className="notice">
@@ -125,6 +129,10 @@ export default async function Settings({
           </div>
         </section>
       </div>
+      <WorkspaceSettings
+        settings={workspace(db, user)}
+        admin={user.role === "admin" && !user.customer_id}
+      />
       <section className="card">
         <div className="card-heading">
           <div>

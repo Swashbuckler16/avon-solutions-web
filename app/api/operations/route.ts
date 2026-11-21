@@ -15,6 +15,7 @@ import {
   transaction,
 } from "@/lib/orders";
 import { importOrders } from "@/lib/imports";
+import { reconcileFile, resolveFreight } from "@/lib/reconciliation";
 import { saveProfile } from "@/lib/rate-cards";
 import {
   packingPlan,
@@ -79,6 +80,15 @@ export async function POST(request: Request) {
       db = getDb();
     let result: unknown;
     switch (body.action) {
+      case "reconciliation_preview":
+        result = reconcileFile(db, user, data);
+        break;
+      case "reconciliation_import":
+        result = reconcileFile(db, user, data, true);
+        break;
+      case "freight_resolve":
+        result = resolveFreight(db, user, data);
+        break;
       case "dispatch_profile":
         result = saveProfile(db, user, data);
         break;

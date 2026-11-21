@@ -533,7 +533,9 @@ export function saveFreight(db: DatabaseSync, user: User, input: unknown) {
     if (s.mode !== "simulator")
       throw new InputError("Choose a simulator shipment.");
     const old = db
-      .prepare("SELECT revision FROM freight_entries WHERE shipment_id=?")
+      .prepare(
+        "SELECT revision,quoted_paise,invoiced_paise,invoice_ref FROM freight_entries WHERE shipment_id=?",
+      )
       .get(id);
     if (old) revision(old as { revision: unknown }, v.revision);
     else if (Number(v.revision) !== 0)
@@ -541,6 +543,15 @@ export function saveFreight(db: DatabaseSync, user: User, input: unknown) {
     db.prepare(
       "INSERT INTO freight_entries(shipment_id,quoted_paise,invoiced_paise,invoice_ref,user_id,updated_at) VALUES (?,?,?,?,?,?) ON CONFLICT(shipment_id) DO UPDATE SET quoted_paise=excluded.quoted_paise,invoiced_paise=excluded.invoiced_paise,invoice_ref=excluded.invoice_ref,user_id=excluded.user_id,revision=freight_entries.revision+1,updated_at=excluded.updated_at",
     ).run(id, quoted, invoiced, reference, user.id, Date.now());
+    if (
+      !old ||
+      old.quoted_paise !== quoted ||
+      old.invoiced_paise !== invoiced ||
+      old.invoice_ref !== reference
+    )
+      db.prepare(
+        "UPDATE freight_entries SET resolution='open',resolution_note='' WHERE shipment_id=?",
+      ).run(id);
     audit(db, user, "freight_recorded:" + id);
     return {
       message: "Supplied amounts recorded. No payment or settlement performed.",

@@ -120,7 +120,7 @@ export function DispatchWorkbench({
     <section className="card op-panel">
       <h2>Prepare orders</h2>
       <p>
-        Select from the newest 100 matching unbooked orders. Search above to
+        Select from the newest 500 matching unbooked orders. Search above to
         find older records. Selection applies only to this list.
       </p>
       <fieldset disabled={busy || !write} className="op-fields">
@@ -472,7 +472,7 @@ export function TrackingFile() {
     <section className="card op-panel">
       <h2>Import local tracking events</h2>
       <p>
-        CSV/TSV, up to 1 MB and 500 rows. Headers:
+        CSV/TSV, up to 1 MB and 1,000 rows. Headers:
         awb,event_key,status,occurred_at,location,note. Use ISO timestamps with
         Z or an offset. Unique event keys make repeat imports safe. Only
         simulator shipments are accepted.
@@ -523,8 +523,8 @@ export function TrackingFile() {
                 throw new Error(
                   "Use the template headers, without duplicates.",
                 );
-              if (table.length < 2 || table.length > 501)
-                throw new Error("Include 1–500 data rows.");
+              if (table.length < 2 || table.length > 1001)
+                throw new Error("Include 1–1,000 data rows.");
               setRows(
                 table
                   .slice(1)

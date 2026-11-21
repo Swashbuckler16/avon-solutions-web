@@ -33,7 +33,7 @@ export default async function Dispatch({
     write = user.role !== "viewer";
   const orders = db
     .prepare(
-      `SELECT * FROM orders o WHERE customer_id=? AND (customer_id=? OR ? IS NULL) AND status IN ('new','unprocessed') AND json_extract(details,'$.items') IS NOT NULL AND instr(lower(reference),lower(?))>0 AND NOT EXISTS(SELECT 1 FROM shipments s WHERE s.order_id=o.id AND s.status<>'cancelled') ORDER BY creation_seq DESC LIMIT 100`,
+      `SELECT * FROM orders o WHERE customer_id=? AND (customer_id=? OR ? IS NULL) AND status IN ('new','unprocessed') AND json_extract(details,'$.items') IS NOT NULL AND instr(lower(reference),lower(?))>0 AND NOT EXISTS(SELECT 1 FROM shipments s WHERE s.order_id=o.id AND s.status<>'cancelled') ORDER BY creation_seq DESC LIMIT 500`,
     )
     .all(customer, user.customer_id || null, user.customer_id || null, q)
     .map((o) => ({ ...o, details: JSON.parse(String(o.details)) }) as Order);

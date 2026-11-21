@@ -1,6 +1,6 @@
 # Local expansion: Phases 6 and 7
 
-The first five stages delivered the local model. The user authorized Phase 6 and explicitly retained SQLite. No external credentials, paid service, carrier API or hosting is required for this expansion. Phase 7 remains unstarted.
+The first five stages delivered the local model. Phase 6 is complete and pushed. Stage 7 is complete locally, with SQLite retained as requested. No external credentials, paid service, carrier API or hosting is required for this expansion. See [Stage 7 validation](stage-7-validation.md). The user authorized the Stage 7 commit and GitHub push on 22 November 2026.
 
 ## Phase 6 — Shipping operations
 
@@ -22,4 +22,4 @@ Complete locally on 21 November 2026. See [validation and usage](phase-6-validat
 - Improved feedback entry and larger bulk-processing limits.
 - Integrated testing, usability fixes and updated documentation.
 
-At Phase 7 completion, these agreed features should work locally with available resources and manual inputs. Real carrier dispatch, live availability, carrier-confirmed appointments, customs filings and external notifications remain dependent on separately authorized integrations.
+These agreed features work locally with available resources and manual inputs. Real carrier dispatch, live availability, carrier-confirmed appointments, customs filings and external notifications remain dependent on separately authorized integrations.

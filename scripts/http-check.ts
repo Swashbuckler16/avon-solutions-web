@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import { openDatabase } from "../lib/db.ts";
 import { seed } from "../lib/seed.ts";
 import sharp from "sharp";
+import { readSheet } from "read-excel-file/node";
 
 const directory = mkdtempSync(join(tmpdir(), "avon-http-"));
 const path = join(directory, "test.sqlite");
@@ -635,6 +636,153 @@ try {
         /HTTP-SHIPPING-ORDER/,
       );
       assert.equal((await request("/api/reports")).status, 401);
+      const excelResponse = await customerGet("/api/reports?format=xlsx", ca);
+      assert.equal(excelResponse.status, 200);
+      assert.match(
+        excelResponse.headers.get("content-type") || "",
+        /spreadsheetml/,
+      );
+      const excelSummary = await readSheet(
+        Buffer.from(await excelResponse.arrayBuffer()),
+      );
+      assert.equal(excelSummary[0][0], "Metric");
+      const excelDefinition = await (
+        await op(
+          "report_save",
+          {
+            name: "HTTP Excel",
+            format: "xlsx",
+            interval_hours: 24,
+            filters: { last_days: 7 },
+          },
+          ca,
+        )
+      ).json();
+      const excelRun = await (
+        await op("report_run", { id: excelDefinition.id }, ca)
+      ).json();
+      assert.equal(
+        (await customerGet(`/api/reports?run=${excelRun.id}&format=xlsx`, cb))
+          .status,
+        404,
+      );
+      assert.equal(
+        (await customerGet(`/api/reports?run=${excelRun.id}&format=xlsx`, ca))
+          .status,
+        200,
+      );
+      const settingsPost = (body: unknown, session: string, source = origin) =>
+        request("/api/workspace", {
+          method: "POST",
+          headers: {
+            Origin: source,
+            Cookie: session,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        });
+      assert.equal(
+        (
+          await settingsPost(
+            {
+              kind: "preferences",
+              theme: "dark",
+              density: "compact",
+              revision: 0,
+            },
+            ca,
+          )
+        ).status,
+        200,
+      );
+      assert.equal(
+        (
+          await settingsPost(
+            {
+              kind: "preferences",
+              theme: "light",
+              density: "compact",
+              revision: 1,
+            },
+            ca,
+            "https://invalid.test",
+          )
+        ).status,
+        403,
+      );
+      assert.equal(
+        (
+          await settingsPost(
+            {
+              kind: "brand",
+              name: "Forged",
+              initials: "F",
+              accent: "teal",
+              revision: 1,
+            },
+            ca,
+          )
+        ).status,
+        403,
+      );
+      assert.match(
+        await (await customerGet("/settings", ca)).text(),
+        /data-theme="dark"/,
+      );
+      assert.match(
+        await (await customerGet("/settings", cb)).text(),
+        /data-theme="light"/,
+      );
+      const invoiceDb = openDatabase(path);
+      const invoiceAwb = String(
+        invoiceDb.prepare("SELECT awb FROM shipments WHERE id=?").get(sid)!.awb,
+      );
+      invoiceDb.close();
+      const invoiceInput = {
+        kind: "freight",
+        rows: [
+          {
+            awb: invoiceAwb,
+            event_key: "http-stage7-invoice",
+            invoice_ref: "HTTP-COST-2",
+            quoted: "100",
+            invoiced: "105",
+            revision: 1,
+          },
+        ],
+      };
+      assert.equal(
+        (await op("reconciliation_preview", invoiceInput, ca)).status,
+        403,
+      );
+      const invoicePreview = await (
+        await op("reconciliation_preview", invoiceInput)
+      ).json();
+      assert.equal(invoicePreview.results[0].status, "valid");
+      assert.equal(
+        (await (await op("reconciliation_import", invoiceInput)).json())
+          .results[0].status,
+        "saved",
+      );
+      assert.equal(
+        (await (await op("reconciliation_import", invoiceInput)).json())
+          .results[0].status,
+        "duplicate",
+      );
+      assert.equal(
+        (
+          await op("freight_resolve", {
+            shipment_id: sid,
+            revision: 2,
+            resolution: "resolved",
+            note: "Verified supplied correction",
+          })
+        ).status,
+        200,
+      );
+      console.log(
+        "PASS Stage 7 Excel snapshots/download ownership, preferences isolation/origin checks and invoice reconciliation/retry",
+      );
       assert.ok(
         !(await (await customerGet("/api/reports", cb)).text()).includes(
           "HTTP-SHIPPING-ORDER",
