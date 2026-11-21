@@ -647,11 +647,16 @@ try {
         "/analytics",
         "/insights",
         "/insights?q=HTTP-SHIPPING&q=ignored",
+        "/dispatch",
       ]) {
         const own = await customerGet(route, ca);
         assert.equal(own.status, 200);
         const pageBody = await own.text();
-        assert.ok(!pageBody.includes("Application error") && !pageBody.includes("Something didn’t load"),route+" failed to render");
+        assert.ok(
+          !pageBody.includes("Application error") &&
+            !pageBody.includes("Something didn’t load"),
+          route + " failed to render",
+        );
         const other = await (await customerGet(route, cb)).text();
         assert.ok(
           !other.includes("HTTP-SHIPPING-ORDER") &&
@@ -662,6 +667,146 @@ try {
       }
       console.log(
         "PASS Stage 4 exception requests, rules, channel retries, private reports, freight, feedback and scoped pages",
+      );
+      const phase6Order = await (
+        await op("order", { ...data, reference: "HTTP-PHASE6" }, ca)
+      ).json();
+      const packing = {
+        kind: "packing",
+        customer_id: a,
+        name: "HTTP Packing A",
+        active: 1,
+        priority: 1,
+        country: "IN",
+        prefix: "",
+        warehouse_id: warehouse,
+        sku: "SKU-HTTP",
+        units: 1,
+        unit_weight: "0.5",
+        tare: "0.1",
+        length: 10,
+        width: 10,
+        height: 10,
+        max_kg: 2,
+      };
+      assert.equal((await op("dispatch_profile", packing, ca)).status, 403);
+      assert.equal((await op("dispatch_profile", packing)).status, 200);
+      assert.equal(
+        (
+          await op(
+            "packing_preview",
+            { order_id: phase6Order.id, revision: 1 },
+            cb,
+          )
+        ).status,
+        404,
+      );
+      const plan = await (
+        await op(
+          "packing_preview",
+          { order_id: phase6Order.id, revision: 1 },
+          ca,
+        )
+      ).json();
+      assert.equal(plan.packages.length, 2);
+      assert.equal(
+        (
+          await op(
+            "packing_apply",
+            { order_id: phase6Order.id, revision: 1, token: plan.token },
+            ca,
+          )
+        ).status,
+        200,
+      );
+      const split = await (
+        await op(
+          "order_transform",
+          {
+            kind: "split",
+            sources: [{ id: phase6Order.id, revision: 2 }],
+            quantities: [1],
+            reference_a: "HTTP-P6-A",
+            reference_b: "HTTP-P6-B",
+            packages_a: data.packages,
+            packages_b: data.packages,
+          },
+          ca,
+        )
+      ).json();
+      assert.equal(split.results.length, 2);
+      const merged = await (
+        await op(
+          "order_transform",
+          {
+            kind: "merge",
+            sources: split.results.map((r: { id: string }) => ({
+              id: r.id,
+              revision: 1,
+            })),
+            reference: "HTTP-P6-MERGED",
+          },
+          ca,
+        )
+      ).json();
+      const quoteBatch = await (
+        await op(
+          "bulk_quotes",
+          { orders: [merged.results[0].id], strategy: "balanced" },
+          ca,
+        )
+      ).json();
+      const bookingRows = [
+        {
+          quote_id: quoteBatch[0].quote.id,
+          request_key: "http-phase6-bulk-001",
+        },
+      ];
+      const bookedBatch = await (
+        await op("bulk_book", { rows: bookingRows }, ca)
+      ).json();
+      assert.equal(bookedBatch.results[0].status, "booked");
+      assert.equal(
+        (await (await op("bulk_book", { rows: bookingRows }, ca)).json())
+          .results[0].id,
+        bookedBatch.results[0].id,
+      );
+      const inspection = openDatabase(path),
+        awb = inspection
+          .prepare("SELECT awb FROM shipments WHERE id=?")
+          .get(bookedBatch.results[0].id)!.awb;
+      inspection.close();
+      const trackRows = [
+        {
+          awb,
+          event_key: "http-phase6-file-event",
+          status: "in_transit",
+          occurred_at: new Date().toISOString(),
+          location: "Test",
+          note: "CSV-equivalent payload",
+        },
+      ];
+      assert.equal(
+        (await op("tracking_preview", { rows: trackRows }, ca)).status,
+        403,
+      );
+      assert.equal(
+        (await (await op("tracking_preview", { rows: trackRows })).json())
+          .results[0].status,
+        "valid",
+      );
+      assert.equal(
+        (await (await op("tracking_import", { rows: trackRows })).json())
+          .results[0].status,
+        "saved",
+      );
+      assert.ok(
+        !(
+          await (await customerGet("/dispatch?customer=" + a, cb)).text()
+        ).includes("HTTP Packing A"),
+      );
+      console.log(
+        "PASS Phase 6 packing preview/apply, split/merge, batch booking retry, tracking import and customer isolation",
       );
       assert.equal(
         (

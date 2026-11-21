@@ -39,7 +39,7 @@ export async function copyDatabase(
       const versions = check
         .prepare("SELECT version FROM schema_migrations ORDER BY version")
         .all();
-      if (versions.map((v) => v.version).join(",") !== "1,2,3,4,5,6")
+      if (versions.map((v) => v.version).join(",") !== "1,2,3,4,5,6,7")
         throw new Error(
           "Backup schema does not match this release. Use the matching source version.",
         );

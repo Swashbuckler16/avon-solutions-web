@@ -25,6 +25,7 @@ import type { User } from "@/lib/auth-core";
 const navigation = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/orders", label: "Orders", icon: Package },
+  { href: "/dispatch", label: "Dispatch planning", icon: Truck },
   { href: "/customers", label: "Customers", icon: Package },
   { href: "/warehouses", label: "Pickup locations", icon: Truck },
   { href: "/shipments", label: "Shipments", icon: Truck },

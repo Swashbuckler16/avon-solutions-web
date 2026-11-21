@@ -6,6 +6,7 @@ import { InputError, money } from "@/lib/orders";
 import { getShipment } from "@/lib/shipping";
 import { formatINR } from "@/lib/shipping-format";
 import { PrintDocument } from "@/components/shipping-controls";
+import { ShippingDetailsSummary } from "@/components/shipping-details";
 export default async function Documents({
   params,
   searchParams,
@@ -34,6 +35,9 @@ export default async function Documents({
         <PrintDocument />
       </div>
       <article className="print-sheet">
+        {s.direction === "forward" && (
+          <ShippingDetailsSummary value={d.order.shipping} />
+        )}
         <div className="print-warning">
           SIMULATION ONLY · {s.status === "cancelled" ? "CANCELLED · " : ""}NOT
           VALID FOR CARRIER HANDOVER

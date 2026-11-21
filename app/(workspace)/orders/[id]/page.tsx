@@ -11,6 +11,7 @@ import {
 } from "@/lib/orders";
 import { PageHeading, Badge } from "@/components/ui";
 import { OrderAction } from "@/components/order-list";
+import { ShippingDetailsSummary } from "@/components/shipping-details";
 export default async function Detail({
   params,
 }: {
@@ -30,7 +31,11 @@ export default async function Detail({
     editable = can(user.role, "operate"),
     unbooked =
       ["new", "unprocessed"].includes(order.status) &&
-      !db.prepare("SELECT id FROM shipments WHERE order_id=? AND status<>'cancelled'").get(id);
+      !db
+        .prepare(
+          "SELECT id FROM shipments WHERE order_id=? AND status<>'cancelled'",
+        )
+        .get(id);
   return (
     <>
       <PageHeading
@@ -55,8 +60,45 @@ export default async function Detail({
           </Link>
         )}
       </PageHeading>
-      {editable&&unbooked&&order.status==='new'&&<p className="notice"><Link className="button" href={'/shipments/new?order='+id}>Create shipment</Link> Compare simulated services and prepare a booking.</p>}
-      <p><Link href={'/shipments?q='+encodeURIComponent(order.reference)}>View this order’s shipments →</Link></p>
+      {editable && unbooked && order.status === "new" && (
+        <p className="notice">
+          <Link className="button" href={"/shipments/new?order=" + id}>
+            Create shipment
+          </Link>{" "}
+          Compare simulated services and prepare a booking.
+        </p>
+      )}
+      <p>
+        <Link href={"/shipments?q=" + encodeURIComponent(order.reference)}>
+          View this order’s shipments →
+        </Link>
+      </p>
+      {editable && unbooked && (
+        <p>
+          <Link
+            href={
+              "/dispatch?customer=" +
+              order.customer_id +
+              "&q=" +
+              encodeURIComponent(order.reference)
+            }
+          >
+            Packing, split/merge and bulk preparation →
+          </Link>
+        </p>
+      )}
+      <ShippingDetailsSummary value={d.shipping} />
+      {db
+        .prepare(
+          `SELECT l.kind,o.id,o.reference,CASE WHEN l.source_id=? THEN 'Replacement' ELSE 'Source' END relationship FROM order_links l JOIN orders o ON o.id=CASE WHEN l.source_id=? THEN l.target_id ELSE l.source_id END WHERE l.source_id=? OR l.target_id=?`,
+        )
+        .all(id, id, id, id)
+        .map((link, i) => (
+          <p key={i}>
+            {String(link.kind)} · {String(link.relationship)}:{" "}
+            <Link href={"/orders/" + link.id}>{String(link.reference)}</Link>
+          </p>
+        ))}
       <div className="order-detail-grid">
         <section className="card op-panel">
           <Badge status={order.status} />
@@ -78,7 +120,8 @@ export default async function Detail({
             <div>
               <dt>Carrier preference</dt>
               <dd>
-                {d.carrier || "Not supplied"} · preference only; see shipment records for bookings
+                {d.carrier || "Not supplied"} · preference only; see shipment
+                records for bookings
               </dd>
             </div>
             <div>

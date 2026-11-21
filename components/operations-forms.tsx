@@ -10,6 +10,7 @@ import type {
   Order,
   Item,
   Parcel,
+  ShippingDetails,
 } from "@/lib/orders";
 import { carriers, businessDate } from "@/lib/order-format";
 
@@ -59,6 +60,10 @@ export function Field({
         onChange={(e) => onChange(e.target.value)}
         type={type}
         required={required}
+        onInvalid={(e) => {
+          const details = e.currentTarget.closest("details");
+          if (details) details.open = true;
+        }}
         {...props}
       />
     </label>
@@ -67,9 +72,11 @@ export function Field({
 export function AddressFields({
   value,
   onChange,
+  international = false,
 }: {
   value: Address;
   onChange: (a: Address) => void;
+  international?: boolean;
 }) {
   return (
     <div className="op-grid">
@@ -85,7 +92,7 @@ export function AddressFields({
       ).map(([key, label]) => (
         <Field
           key={key}
-          label={label}
+          label={key === "pincode" && international ? "Postal code" : label}
           value={value[key]}
           onChange={(s) => onChange({ ...value, [key]: s })}
           maxLength={
@@ -94,12 +101,130 @@ export function AddressFields({
               : key === "phone"
                 ? 16
                 : key === "pincode"
-                  ? 6
+                  ? international
+                    ? 16
+                    : 6
                   : 80
           }
         />
       ))}
     </div>
+  );
+}
+function ShippingFields({
+  value,
+  onChange,
+}: {
+  value?: ShippingDetails;
+  onChange: (v: ShippingDetails) => void;
+}) {
+  const d = value || {
+    country: "IN",
+    currency: "INR",
+    declared_value: "0",
+    purpose: "sale",
+    incoterm: "DAP",
+    description: "",
+    appointment_date: "",
+    appointment_time: "",
+    timezone: "Asia/Kolkata",
+  };
+  const set = (key: keyof ShippingDetails, v: string) =>
+    onChange({ ...d, [key]: v });
+  return (
+    <>
+      <Field
+        label="Destination country (two-letter code)"
+        value={d.country}
+        maxLength={2}
+        onChange={(v) => set("country", v.toUpperCase())}
+      />
+      <p className="field-help">
+        IN = India, US = United States, GB = United Kingdom. International
+        entries are preparation records, not customs filings. Order accounting
+        remains INR.
+      </p>
+      {d.country !== "IN" && (
+        <div className="op-grid">
+          <label className="op-field">
+            Declared currency
+            <select
+              value={d.currency}
+              onChange={(e) => set("currency", e.target.value)}
+            >
+              {["INR", "USD", "EUR", "GBP", "AED", "SGD"].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </label>
+          <Field
+            label="Total declared value"
+            value={d.declared_value}
+            type="number"
+            min={0.01}
+            step="0.01"
+            onChange={(v) => set("declared_value", v)}
+          />
+          <Field
+            label="Contents description"
+            value={d.description}
+            maxLength={250}
+            onChange={(v) => set("description", v)}
+          />
+          <label className="op-field">
+            Purpose
+            <select
+              value={d.purpose}
+              onChange={(e) => set("purpose", e.target.value)}
+            >
+              {["sale", "gift", "sample", "return"].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </label>
+          <label className="op-field">
+            Incoterm
+            <select
+              value={d.incoterm}
+              onChange={(e) => set("incoterm", e.target.value)}
+            >
+              {["DAP", "DDP", "EXW"].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+      <details>
+        <summary>Appointment request (optional)</summary>
+        <p>
+          Requested local date/time only; carrier acceptance is not confirmed.
+          Enter the destination's time zone.
+        </p>
+        <div className="op-grid">
+          <Field
+            label="Appointment date"
+            value={d.appointment_date}
+            type="date"
+            required={false}
+            onChange={(v) => set("appointment_date", v)}
+          />
+          <Field
+            label="Appointment time"
+            value={d.appointment_time}
+            type="time"
+            required={false}
+            onChange={(v) => set("appointment_time", v)}
+          />
+          <Field
+            label="IANA time zone"
+            value={d.timezone}
+            required={Boolean(d.appointment_date || d.appointment_time)}
+            onChange={(v) => set("timezone", v)}
+          />
+        </div>
+      </details>
+    </>
   );
 }
 export const emptyAddress: Address = {
@@ -508,8 +633,14 @@ export function OrderEditor({
         </section>
         <section className="card op-panel">
           <h2>2. Deliver to</h2>
-          <p className="muted">Recipient details · India</p>
+          <ShippingFields
+            value={value.shipping}
+            onChange={(v) => set("shipping", v)}
+          />
           <AddressFields
+            international={Boolean(
+              value.shipping && value.shipping.country !== "IN",
+            )}
             value={value.recipient}
             onChange={(v) => set("recipient", v)}
           />
@@ -685,8 +816,8 @@ export function OrderEditor({
             </select>
           </label>
           <p className="notice">
-            Preference only. Simulated services are available from Create shipment; live services
-            remain disconnected.
+            Preference only. Simulated services are available from Create
+            shipment; live services remain disconnected.
           </p>
           <Field
             label="Notes"

@@ -48,6 +48,7 @@ export type Parcel = {
   height: string;
 };
 export type OrderData = {
+  shipping?: ShippingDetails;
   reference: string;
   customer_id: string;
   warehouse_id: string;
@@ -60,6 +61,93 @@ export type OrderData = {
   carrier: string;
   notes: string;
 };
+export type ShippingDetails = {
+  country: string;
+  currency: string;
+  declared_value: string;
+  purpose: string;
+  incoterm: string;
+  description: string;
+  appointment_date: string;
+  appointment_time: string;
+  timezone: string;
+};
+export function shippingDetails(input: unknown): ShippingDetails {
+  const v = record(input ?? {});
+  const country = text(
+    v.country ?? "IN",
+    "Destination country",
+    2,
+  ).toUpperCase();
+  if (
+    !/^[A-Z]{2}$/.test(country) ||
+    !new Intl.DisplayNames(["en"], { type: "region", fallback: "none" }).of(
+      country,
+    )
+  )
+    throw new InputError(
+      "Use a recognized two-letter destination country code.",
+    );
+  const currency = text(
+    v.currency ?? "INR",
+    "Declared currency",
+    3,
+  ).toUpperCase();
+  if (!["INR", "USD", "EUR", "GBP", "AED", "SGD"].includes(currency))
+    throw new InputError("Choose a supported declared currency.");
+  const purpose = text(v.purpose ?? "sale", "Purpose", 20),
+    incoterm = text(v.incoterm ?? "DAP", "Incoterm", 3);
+  if (
+    !["sale", "gift", "sample", "return"].includes(purpose) ||
+    !["DAP", "DDP", "EXW"].includes(incoterm)
+  )
+    throw new InputError("Invalid shipment purpose or incoterm.");
+  const declared_value = text(v.declared_value ?? "0", "Declared value", 12),
+    description = text(v.description ?? "", "Customs description", 250, false);
+  if (money(declared_value) === 0 && country !== "IN")
+    throw new InputError(
+      "International shipments need a positive declared value.",
+    );
+  if (country !== "IN" && !description)
+    throw new InputError("Describe the international shipment contents.");
+  const appointment_date = v.appointment_date
+    ? date(v.appointment_date, "Appointment")
+    : "";
+  const appointment_time = text(
+    v.appointment_time ?? "",
+    "Appointment time",
+    5,
+    false,
+  );
+  if (
+    Boolean(appointment_date) !== Boolean(appointment_time) ||
+    (appointment_time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(appointment_time))
+  )
+    throw new InputError("Supply an appointment date and HH:mm time together.");
+  const timezone = text(
+    !appointment_date && !v.timezone
+      ? "Asia/Kolkata"
+      : (v.timezone ?? "Asia/Kolkata"),
+    "Time zone",
+    80,
+  );
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: timezone });
+  } catch {
+    throw new InputError("Enter an IANA time zone, such as Asia/Kolkata.");
+  }
+  return {
+    country,
+    currency,
+    declared_value,
+    purpose,
+    incoterm,
+    description,
+    appointment_date,
+    appointment_time,
+    timezone,
+  };
+}
 export type Order = {
   id: string;
   reference: string;
@@ -98,7 +186,7 @@ export function text(
     );
   return result;
 }
-export function address(value: unknown): Address {
+export function address(value: unknown, country = "IN"): Address {
   const v = record(value);
   const result = {
     name: text(v.name, "Contact name", 80),
@@ -106,14 +194,20 @@ export function address(value: unknown): Address {
     address: text(v.address, "Street address", 250),
     city: text(v.city, "City", 80),
     state: text(v.state, "State", 80),
-    pincode: text(v.pincode, "PIN code", 6),
+    pincode: text(v.pincode, "Postal code", country === "IN" ? 6 : 16),
   };
-  if (!/^\+?[0-9]{10,15}$/.test(result.phone))
+  if (
+    !(country === "IN" ? /^\+?[0-9]{10,15}$/ : /^\+?[0-9]{7,15}$/).test(
+      result.phone,
+    )
+  )
     throw new InputError(
-      "Phone must contain 10–15 digits, optionally starting with +.",
+      `Phone must contain ${country === "IN" ? "10" : "7"}–15 digits, optionally starting with +.`,
     );
-  if (!/^[1-9][0-9]{5}$/.test(result.pincode))
+  if (country === "IN" && !/^[1-9][0-9]{5}$/.test(result.pincode))
     throw new InputError("Enter a six-digit Indian PIN code.");
+  if (country !== "IN" && !/^[\w -]{1,16}$/.test(result.pincode))
+    throw new InputError("Enter a valid international postal code.");
   return result;
 }
 export function money(value: unknown) {
@@ -365,12 +459,20 @@ export function validateOrder(
   const carrier = text(v.carrier ?? "No preference", "Preferred carrier", 40);
   if (!(carriers as readonly string[]).includes(carrier))
     throw new InputError("Choose a supported carrier preference.");
+  const shipping = v.shipping ? shippingDetails(v.shipping) : undefined;
+  if (
+    shipping?.country !== undefined &&
+    shipping.country !== "IN" &&
+    items.some((i) => !i.hsn)
+  )
+    throw new InputError("International shipment items need an HS/HSN code.");
   const data: OrderData = {
+    ...(shipping ? { shipping } : {}),
     reference,
     customer_id: customerId,
     warehouse_id: warehouseId,
     payment_mode: String(v.payment_mode),
-    recipient: address(v.recipient),
+    recipient: address(v.recipient, shipping?.country),
     items,
     packages,
     invoice_number: text(v.invoice_number, "Invoice number", 60),

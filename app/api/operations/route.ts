@@ -15,6 +15,14 @@ import {
   transaction,
 } from "@/lib/orders";
 import { importOrders } from "@/lib/imports";
+import { saveProfile } from "@/lib/rate-cards";
+import {
+  packingPlan,
+  transformOrder,
+  bulkQuotes,
+  bulkBook,
+  trackingImport,
+} from "@/lib/dispatch";
 import {
   openException,
   exceptionAction,
@@ -71,6 +79,30 @@ export async function POST(request: Request) {
       db = getDb();
     let result: unknown;
     switch (body.action) {
+      case "dispatch_profile":
+        result = saveProfile(db, user, data);
+        break;
+      case "packing_preview":
+        result = packingPlan(db, user, data);
+        break;
+      case "packing_apply":
+        result = packingPlan(db, user, data, true);
+        break;
+      case "order_transform":
+        result = transformOrder(db, user, data);
+        break;
+      case "bulk_quotes":
+        result = bulkQuotes(db, user, data);
+        break;
+      case "bulk_book":
+        result = bulkBook(db, user, data);
+        break;
+      case "tracking_preview":
+        result = trackingImport(db, user, data);
+        break;
+      case "tracking_import":
+        result = trackingImport(db, user, data, true);
+        break;
       case "exception_open":
         result = openException(db, user, data);
         break;

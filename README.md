@@ -67,3 +67,9 @@ Read docs/stage-3-validation.md for evidence and limits, and docs/carrier-integr
 ## Stage 4 local operations
 
 See docs/stage-4-validation.md for behavior, limits and validation. Use npm run scheduler for a single due-report pass, or npm run scheduler -- --watch while the computer is on. Reports stay in the private local outbox; no email, carrier or store service is contacted.
+
+## Phase 6 shipping operations
+
+Open **Dispatch planning** for manual rate cards, cost/delivery allocation, SKU packing and pickup allocation, safe split/merge, reviewed bulk simulated bookings and staff tracking-file imports. The order editor now records international declarations and appointment requests. See [Phase 6 guide and checks](docs/phase-6-validation.md) for exact rules and limits and [Phases 6–7 plan](docs/phase-6-and-7.md) for the remaining scope. SQLite remains in use; migration 007 preserves existing records. Carrier connections and hosting remain excluded.
+
+The earlier split/merge exclusion described Stage 2; Phase 6 implements the documented unbooked-order rules. It does not merge different invoice references or already-booked shipments. Phase 7 is not started.

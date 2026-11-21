@@ -6,6 +6,7 @@ import { InputError } from "@/lib/orders";
 import { shipmentDetail } from "@/lib/shipping";
 import { formatINR, simulationNotice } from "@/lib/shipping-format";
 import { PageHeading, Badge } from "@/components/ui";
+import { ShippingDetailsSummary } from "@/components/shipping-details";
 import {
   ShipmentCancel,
   TrackingReplay,
@@ -66,6 +67,12 @@ export default async function ShipmentDetail({
           : "Historical synthetic fixture. No operational tracking, documents or booking are available."}
       </p>
       <div className="order-detail-grid">
+        {s.direction === "forward" && (
+          <ShippingDetailsSummary value={s.snapshot.order?.shipping} />
+        )}
+        {s.snapshot.pricing_source && (
+          <p className="notice">Pricing basis: {s.snapshot.pricing_source}</p>
+        )}
         <div>
           <section className="card op-panel">
             <Badge status={s.status} />

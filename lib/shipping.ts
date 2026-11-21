@@ -15,9 +15,11 @@ import {
   type Address,
 } from "./orders.ts";
 import { simulatedServices } from "./carrier-simulator.ts";
+import { manualServices } from "./rate-cards.ts";
 import { trackingStatuses, type TrackingStatus } from "./shipping-format.ts";
 
 export type ShippingSnapshot = {
+  pricing_source?: string;
   order: OrderData;
   pickup: Address;
   recipient: Address;
@@ -177,7 +179,24 @@ export function quoteShipment(
       customer: order.customer,
       direction: parentId ? "reverse" : "forward",
     };
-    const services = simulatedServices(pickup, recipient, data.packages);
+    const fictional = simulatedServices(pickup, recipient, data.packages);
+    const manual = parentId
+      ? []
+      : manualServices(db, data, fictional[0].chargeable_kg);
+    const services = manual.length
+      ? manual
+      : !parentId && data.shipping?.country && data.shipping.country !== "IN"
+        ? fictional
+            .slice(0, 1)
+            .map((s) => ({
+              ...s,
+              carrier: "Local simulator",
+              service: "Simulated international",
+              eta_days: 10,
+              reason:
+                "Fictional international service; no customs clearance or carrier availability verified.",
+            }))
+        : fictional;
     const quotes = services.map((service) => {
       if (!service.available)
         return { ...service, id: null, expires_at: now + 900000 };
@@ -195,7 +214,7 @@ export function quoteShipment(
         service.price_paise,
         service.chargeable_kg,
         service.eta_days,
-        JSON.stringify(snapshot),
+        JSON.stringify({ ...snapshot, pricing_source: service.reason }),
         now + 900000,
       );
       return { ...service, id, expires_at: now + 900000 };
